@@ -213,6 +213,10 @@ const TopupCard: FC<TopupCardProps> = ({ walletId, currency, conversion_rate = 1
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || 'Failed to topup wallet');
+			// reference_id doubles as this request's idempotency key (see the field's
+			// description below). Clear it so an immediate retry doesn't resend the same
+			// key against the failed attempt and get rejected as a duplicate.
+			setTopupPayload((prev) => ({ ...prev, reference_id: undefined }));
 		},
 	});
 
