@@ -59,12 +59,17 @@ describe('CreditGrantModal', () => {
 			</I18nextProvider>,
 		);
 
+		const conversionInput = rateInput('Conversion Rate');
+		fireEvent.change(conversionInput, { target: { value: '0.001' } });
+		expect(conversionInput).toHaveValue('0.001');
+
 		const topupInput = rateInput('Top-up Conversion Rate');
 		fireEvent.change(topupInput, { target: { value: '0.00108' } });
 		expect(topupInput).toHaveValue('0.00108');
 
 		fireEvent.click(screen.getByRole('button', { name: 'Add Credit' }));
 		expect(onSave).toHaveBeenCalled();
-		expect(Number(onSave.mock.calls[0][0].topup_conversion_rate)).toBe(0.00108);
+		expect(onSave.mock.calls[0][0].conversion_rate).toBe(0.001);
+		expect(onSave.mock.calls[0][0].topup_conversion_rate).toBe(0.00108);
 	});
 });
