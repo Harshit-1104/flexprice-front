@@ -1,4 +1,4 @@
-import { Button, DecimalUsageInput, Input, Label, Select, SelectOption } from '@/components/atoms';
+import { Button, Input, Label, Select, SelectOption } from '@/components/atoms';
 import Dialog from '@/components/atoms/Dialog';
 import { CREDIT_GRANT_CADENCE, CREDIT_GRANT_EXPIRATION_TYPE, CREDIT_GRANT_PERIOD, CREDIT_GRANT_SCOPE } from '@/models/CreditGrant';
 import { InternalCreditGrantRequest } from '@/types/dto/CreditGrant';
@@ -279,8 +279,9 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 					<div className='flex items-center gap-2 w-full'>
 						<Input className='w-full' value={'1'} disabled suffix='credit' />
 						<span>=</span>
-						<DecimalUsageInput
+						<Input
 							className='w-full'
+							variant='number'
 							value={formData.conversion_rate?.toString() || ''}
 							onChange={(value) => handleFieldChange('conversion_rate', value)}
 						/>
@@ -295,8 +296,9 @@ const CreditGrantModal: React.FC<Props> = ({ data, isOpen, onOpenChange, onSave,
 					<div className='flex items-center gap-2 w-full'>
 						<Input className='w-full' value={'1'} disabled suffix='credit' />
 						<span>=</span>
-						<DecimalUsageInput
+						<Input
 							className='w-full'
+							variant='number'
 							value={formData.topup_conversion_rate?.toString() || formData.conversion_rate?.toString() || ''}
 							onChange={(value) => handleFieldChange('topup_conversion_rate', value)}
 						/>
