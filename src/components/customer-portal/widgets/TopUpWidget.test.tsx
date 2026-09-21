@@ -182,6 +182,25 @@ describe('TopUpWidget', () => {
 			expect(toast.success).not.toHaveBeenCalled();
 		});
 
+		// Resuming is the action we want taken — superseding cancels a payment that may
+		// be mid-capture. The open happens in an async callback, so a popup blocker can
+		// stop it; without the link on screen the customer is left with only the
+		// destructive exit.
+		it('leaves the existing payment reachable by hand when the popup is blocked', async () => {
+			vi.mocked(CustomerPortalApi.topUpWallet).mockResolvedValue(BLOCKED as never);
+			openSpy.mockReturnValue(null);
+
+			renderWidget();
+			await enterCredits('10');
+			await userEvent.click(screen.getByRole('button', { name: /pay now/i }));
+			await screen.findByText('A payment is already in progress');
+
+			await userEvent.click(screen.getByRole('button', { name: /continue that payment/i }));
+
+			expect(openSpy).toHaveBeenCalledWith('https://checkout.test/existing', '_blank', expect.any(String));
+			expect(screen.getByText('https://checkout.test/existing')).toBeInTheDocument();
+		});
+
 		it('supersedes only after the customer says so, reusing the idempotency key', async () => {
 			vi.mocked(CustomerPortalApi.topUpWallet).mockResolvedValue(BLOCKED as never);
 
