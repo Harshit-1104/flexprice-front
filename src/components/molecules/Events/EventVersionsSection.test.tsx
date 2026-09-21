@@ -42,7 +42,7 @@ beforeAll(async () => {
 					events: {
 						debugger: {
 							ingestedVersionsTitle: 'Ingested versions',
-							ingestedVersionNumber: 'Version {{n}} of {{total}}',
+							ingestedVersionNumber: 'Version {{n}}',
 							duplicateEventIdHint: duplicateHint,
 						},
 					},
@@ -74,12 +74,21 @@ describe('EventVersionsSection', () => {
 	it('lists every ingested version with properties and a duplicate-id hint', () => {
 		renderSection([latestRow, earlierRow]);
 
-		expect(screen.getByText('Version 1 of 2')).toBeInTheDocument();
-		expect(screen.getByText('Version 2 of 2')).toBeInTheDocument();
+		expect(screen.getByText('Version 2')).toBeInTheDocument();
+		expect(screen.getByText('Version 1')).toBeInTheDocument();
+		expect(screen.queryByText('Version 1 of 2')).not.toBeInTheDocument();
 		expect(screen.getByText('4975355')).toBeInTheDocument();
 		expect(screen.getByText('0')).toBeInTheDocument();
 		expect(screen.queryByText('Used for processing')).not.toBeInTheDocument();
 		expect(screen.getByText(duplicateHint)).toBeInTheDocument();
+	});
+
+	it('labels the newest ingest with the highest version number', () => {
+		renderSection([latestRow, earlierRow]);
+
+		const version2 = screen.getByText('Version 2');
+		const version1 = screen.getByText('Version 1');
+		expect(version2.compareDocumentPosition(version1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
 
 	it('does not show the duplicate-id hint for a single version', () => {

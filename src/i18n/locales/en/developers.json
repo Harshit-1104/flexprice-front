@@ -422,7 +422,7 @@
 			"openSubscriptionFailed": "Failed to open subscription",
 			"propertiesCopied": "Properties copied to clipboard!",
 			"ingestedVersionsTitle": "Ingested versions",
-			"ingestedVersionNumber": "Version {{n}} of {{total}}",
+			"ingestedVersionNumber": "Version {{n}}",
 			"duplicateEventIdHint": "This event id was ingested more than once. Stored meter usage is from the first processed ingest, not necessarily the latest version."
 		},
 		"processed": {

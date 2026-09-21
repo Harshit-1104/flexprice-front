@@ -25,6 +25,7 @@ const EventVersionsSection: FC<EventVersionsSectionProps> = ({ events }) => {
 
 			{events.map((row, idx) => {
 				const ingestedAt = row.ingested_at ? formatDateTimeWithSecondsAndTimezone(row.ingested_at) : null;
+				const versionNumber = events.length - idx;
 
 				return (
 					<div
@@ -32,7 +33,7 @@ const EventVersionsSection: FC<EventVersionsSectionProps> = ({ events }) => {
 						className='rounded-xl border border-line bg-gradient-to-br from-surface to-surface-subtle/50 p-6 shadow-sm'>
 						<div className='flex items-center justify-between gap-3 mb-4 pb-4 border-b border-line-subtle'>
 							<span className='text-xs font-semibold text-content-slate-strong shrink-0'>
-								{t('events.debugger.ingestedVersionNumber', { n: idx + 1, total: events.length })}
+								{t('events.debugger.ingestedVersionNumber', { n: versionNumber })}
 							</span>
 							<div className='flex items-center gap-1.5 text-xs text-content-slate-muted min-w-0'>
 								<Clock className='w-3.5 h-3.5 shrink-0' />

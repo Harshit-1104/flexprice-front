@@ -258,7 +258,7 @@
 			"openSubscriptionFailed": "فشل فتح الاشتراك",
 			"propertiesCopied": "تم نسخ الخصائص إلى الحافظة!",
 			"ingestedVersionsTitle": "الإصدارات المستلمة",
-			"ingestedVersionNumber": "الإصدار {{n}} من {{total}}",
+			"ingestedVersionNumber": "الإصدار {{n}}",
 			"duplicateEventIdHint": "تم استلام معرّف الحدث هذا أكثر من مرة. استخدام العداد المخزّن يأتي من أول معالجة، وليس بالضرورة من أحدث إصدار."
 		},
 		"processed": {
