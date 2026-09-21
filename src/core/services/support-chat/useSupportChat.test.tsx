@@ -48,9 +48,9 @@ function createFakeAdapter() {
 	const adapter: SupportChatAdapter & {
 		emitShow: () => void;
 		emitHide: () => void;
-		initMock: Mock<(...args: any[]) => any>;
-		showMock: Mock<(...args: any[]) => any>;
-		disposeMock: Mock<(...args: any[]) => any>;
+		initMock: Mock<SupportChatAdapter['init']>;
+		showMock: Mock<() => void>;
+		disposeMock: Mock<() => void>;
 	} = {
 		initMock: vi.fn().mockResolvedValue(undefined),
 		showMock: vi.fn(),
