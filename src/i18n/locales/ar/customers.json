@@ -192,7 +192,8 @@
 			"feature": "الميزة",
 			"plan": "الخطة",
 			"value": "القيمة",
-			"usage": "الاستخدام"
+			"usage": "الاستخدام",
+			"measure": "Measure"
 		},
 		"units": "وحدات",
 		"unlimitedLabel": "غير محدود",
@@ -206,7 +207,19 @@
 			"dash": "—",
 			"usageProgressUnlimited": "{{usage}} / غير محدود"
 		},
-		"fallback": "--"
+		"fallback": "--",
+		"windowsTitle": "Value windows this cycle",
+		"windowsToggle": "{{count}} windows",
+		"windowOverage": "over by {{amount}}",
+		"windowNone": "—",
+		"windowOpen": "open",
+		"windowsButton": "السجل",
+		"windowsAriaLabel": "سجل الاستخدام لـ {{feature}}",
+		"windowsDialogDescription": "تُقاس كل نافذة وتُفوتر على حدة.",
+		"windowsColumnPeriod": "النافذة",
+		"windowsColumnUsage": "المستخدم",
+		"measureAmount": "Amount",
+		"measureQuantity": "Quantity"
 	},
 	"subscriptionCreate": {
 		"selectCustomerLabel": "العميل",

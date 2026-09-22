@@ -5,10 +5,12 @@ import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { Button, Card, CardHeader, Chip, Dialog, NoDataCard, Sheet } from '@/components/atoms';
 import { FlexpriceTable, ColumnData, AddEntitlementDrawer, EditSubscriptionEntitlementDrawer } from '@/components/molecules';
 import JsonCodeBlock from '@/components/molecules/Events/JsonCodeBlock';
+import { formatAggregatedAllowance, formatAllowanceValue, formatAllowanceReset } from '@/utils/entitlement/allowanceLabel';
+import type { SubscriptionEntitlementEffective } from '@/types/dto/Subscription';
 import SubscriptionApi from '@/api/SubscriptionApi';
 import EntitlementApi from '@/api/EntitlementApi';
 import { FEATURE_TYPE } from '@/models/Feature';
-import { ENTITLEMENT_ENTITY_TYPE } from '@/models/Entitlement';
+import { ENTITLEMENT_ENTITY_TYPE, ENTITLEMENT_GRANT_MEASURE, type Entitlement } from '@/models/Entitlement';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BsThreeDots } from 'react-icons/bs';
@@ -205,6 +207,14 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 		return t(sourceKeys[source] ?? 'entitlements.subscriptionEdit.sourcePlan');
 	};
 
+	/** "1,000 calls / hour" for either shape, so a cadence change shows too. */
+	const describeAggregated = (e?: Partial<Entitlement> | SubscriptionEntitlementEffective) => {
+		if (!e) return undefined;
+		const value = formatAllowanceValue(e as Partial<Entitlement>, t);
+		const reset = formatAllowanceReset(e as Partial<Entitlement>, t);
+		return reset && reset !== '--' ? `${value} / ${reset}` : value;
+	};
+
 	const getEntitlementValue = (row: EnrichedSubscriptionEntitlement) => {
 		const featureType = row.feature_type;
 		const entitlementData = row.entitlement;
@@ -212,13 +222,19 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 		if (featureType === FEATURE_TYPE.METERED) {
 			const limit = entitlementData?.usage_limit;
 			const originalLimit = row.originalUsageLimit;
-			const resetPeriod = entitlementData?.usage_reset_period;
-			const valueText =
-				limit !== null && limit !== undefined
-					? `${limit.toLocaleString()}${resetPeriod ? ` / ${resetPeriod.toLowerCase()}` : ''}`
-					: tc('labels.unlimited');
+			// Grant-backed features carry no usage_limit, so reading it alone printed
+			// "unlimited" for every allowance.
+			const { value, reset } = formatAggregatedAllowance(entitlementData, t);
+			const valueText = reset && reset !== '--' ? `${value} / ${reset}` : value;
 
-			const hasChangedValue = row.isOverrideOfParent && limit !== originalLimit;
+			// Grant-backed rows carry no usage_limit on either side, so the legacy
+			// comparison never fires and the tooltip would read "Unlimited → Unlimited".
+			const isGrant = Boolean(entitlementData?.grant_duration_unit || entitlementData?.grant_quota != null);
+			const originalText = row.originalGrant ? describeAggregated(row.originalGrant) : undefined;
+			const currentText = describeAggregated(entitlementData);
+			const hasChangedValue = isGrant
+				? row.isOverrideOfParent && originalText != null && originalText !== currentText
+				: row.isOverrideOfParent && limit !== originalLimit;
 
 			return (
 				<div className='flex items-center gap-2'>
@@ -235,10 +251,15 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 									<div className='space-y-2'>
 										<div className='font-medium text-content'>{t('entitlements.overridesTable.overrideAppliedTitle')}</div>
 										<div className='text-sm text-content-tertiary'>
-											{t('entitlements.overridesTable.tooltipUsageLimit', {
-												from: formatUsageLimit(originalLimit),
-												to: formatUsageLimit(limit),
-											})}
+											{isGrant
+												? t('entitlements.overridesTable.tooltipAllowance', {
+														from: originalText ?? currentText,
+														to: currentText,
+													})
+												: t('entitlements.overridesTable.tooltipUsageLimit', {
+														from: formatUsageLimit(originalLimit),
+														to: formatUsageLimit(limit),
+													})}
 										</div>
 									</div>
 								</TooltipContent>
@@ -392,6 +413,18 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 			render: (row) => getFeatureTypeChip(row.feature_type),
 		},
 		{
+			title: t('entitlements.overridesTable.columnMeasure'),
+			render: (row) => {
+				// The value column carries no unit word, so this says what it counts.
+				if ((row.feature_type as FEATURE_TYPE) !== FEATURE_TYPE.METERED) return '--';
+				const measure = row.entitlement?.grant_measure;
+				if (!measure) return '--';
+				return measure === ENTITLEMENT_GRANT_MEASURE.AMOUNT
+					? t('entitlements.overridesTable.measureAmountLabel')
+					: t('entitlements.overridesTable.measureQuantityLabel');
+			},
+		},
+		{
 			title: t('entitlements.overridesTable.columnValue'),
 			render: (row) => getEntitlementValue(row),
 		},
@@ -406,7 +439,12 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 				}
 
 				const canDelete = !!row.subscriptionEntitlementId;
-				const canEdit = true;
+				// One field per feature can only address one entitlement. With several
+				// contributing, the field would silently pick one of them: additive pools
+				// them into a single window, so the total stops matching what was typed,
+				// and parallel gives each its own window with nothing to say which is meant.
+				const contributors = row.sources?.length ?? 0;
+				const canEdit = contributors <= 1;
 
 				if (!canEdit && !canDelete) {
 					return null;
@@ -426,17 +464,30 @@ const SubscriptionEntitlementsSection: FC<SubscriptionEntitlementsSectionProps> 
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align='end'>
-								<DropdownMenuItem
-									disabled={!canWriteEntitlement}
-									onSelect={(e) => {
-										e.preventDefault();
-										if (!canWriteEntitlement) return;
-										handleEdit(row);
-									}}
-									className={`flex gap-2 items-center cursor-pointer ${!canWriteEntitlement ? 'opacity-50 cursor-not-allowed' : ''}`}>
-									<Pencil className='h-4 w-4' />
-									<span>{t('entitlements.overridesTable.edit')}</span>
-								</DropdownMenuItem>
+								<TooltipProvider delayDuration={0}>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div>
+												<DropdownMenuItem
+													disabled={!canWriteEntitlement || !canEdit}
+													onSelect={(e) => {
+														e.preventDefault();
+														if (!canWriteEntitlement || !canEdit) return;
+														handleEdit(row);
+													}}
+													className={`flex gap-2 items-center cursor-pointer ${!canWriteEntitlement || !canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}>
+													<Pencil className='h-4 w-4' />
+													<span>{t('entitlements.overridesTable.edit')}</span>
+												</DropdownMenuItem>
+											</div>
+										</TooltipTrigger>
+										{!canEdit && (
+											<TooltipContent side='left' className='max-w-[280px]'>
+												{t('entitlements.subscriptionEdit.editBlockedMultipleSources')}
+											</TooltipContent>
+										)}
+									</Tooltip>
+								</TooltipProvider>
 								{canDelete && (
 									<DropdownMenuItem
 										disabled={!canWriteEntitlement}
