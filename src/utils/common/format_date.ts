@@ -203,7 +203,46 @@ export function formatBillingPeriodDate(date: string | Date, zone: DateTimezone 
 	return `${day} ${month}`;
 }
 
-/** Format a billing period as "7 Mar - 8 Dec". Both ends use the user's local timezone so IST (etc.) midnight boundaries (e.g. `…T18:30:00Z`) map to the intended calendar day. */
+/**
+ * Back an exclusive period end off to the last instant the period actually covers.
+ *
+ * Invoice periods are half-open on the API — `period_end` is the first instant *after* the
+ * period, so a quarter billed June–August arrives as `1 Sep 2026 00:00:00`. One second earlier
+ * is `31 Aug 2026 23:59:59`, the last instant genuinely billed.
+ *
+ * The subtraction is applied to the exact instant the API sent, and the result must be read back
+ * in UTC — see {@link formatPeriodEndDate}. Reading it in the viewer's timezone defeats the
+ * adjustment: `1 Sep 00:00Z` is `1 Sep 05:30` in IST, so a second earlier is still 1 Sep locally.
+ *
+ * Display-only. Never write the shifted value back to the API or into a create/update payload.
+ */
+export function toInclusivePeriodEnd(periodEnd: string | Date): Date {
+	const end = typeof periodEnd === 'string' ? new Date(periodEnd) : periodEnd;
+	if (isNaN(end.getTime())) return end;
+	return new Date(end.getTime() - 1000);
+}
+
+/**
+ * Format the last day an invoice period covers, as "31 Aug".
+ *
+ * Takes the exclusive `period_end` straight from the API, steps back one second, and names that
+ * instant's UTC day. UTC because the shifted instant is only meaningful in the zone the boundary
+ * was expressed in; the backend computes periods in UTC, so the UTC day is the canonical last day.
+ */
+export function formatPeriodEndDate(periodEnd: string | Date): string {
+	return formatBillingPeriodDate(toInclusivePeriodEnd(periodEnd), 'utc');
+}
+
+/** Format a billing period as "1 Jun - 31 Aug". The start keeps the viewer's local calendar day so IST (etc.) midnight boundaries (e.g. `…T18:30:00Z`) map to the intended day; the exclusive end is rendered inclusively — see {@link formatPeriodEndDate}. */
 export function formatBillingPeriod(periodStart: string, periodEnd: string): string {
-	return `${formatBillingPeriodDate(periodStart, 'local')} - ${formatBillingPeriodDate(periodEnd, 'local')}`;
+	return `${formatBillingPeriodDate(periodStart, 'local')} - ${formatPeriodEndDate(periodEnd)}`;
+}
+
+/** Format a billing period as "Jun 1, 2026 – Aug 31, 2026" for surfaces that show full dates. Same exclusive-end rule as {@link formatBillingPeriod}. */
+export function formatBillingPeriodLong(periodStart: string, periodEnd: string): string {
+	const start = new Date(periodStart);
+	const end = toInclusivePeriodEnd(periodEnd);
+	if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'Invalid Date';
+	const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+	return `${start.toLocaleDateString('en-US', options)} – ${end.toLocaleDateString('en-US', { ...options, timeZone: 'UTC' })}`;
 }

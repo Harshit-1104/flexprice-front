@@ -7,6 +7,7 @@ import { formatMoney } from '@/utils/common/formatBalance';
 import { Invoice, INVOICE_STATUS } from '@/models/Invoice';
 import { PAYMENT_STATUS } from '@/constants/payment';
 import { formatDateShort, getCurrencySymbol } from '@/utils/common/helper_functions';
+import { formatBillingPeriodLong } from '@/utils/common/format_date';
 import { portalInvoiceQueryKey } from '../queryKeys';
 import { isPayable } from '../invoiceStatus';
 import { cn } from '@/lib/utils';
@@ -113,10 +114,7 @@ const InvoiceDetailDrawer = ({
 
 					<div className='space-y-2 border-t border-line py-5'>
 						{detail.period_start && detail.period_end && (
-							<MetaRow
-								label={t('invoiceDetail.billingPeriod')}
-								value={`${formatDateShort(detail.period_start)} – ${formatDateShort(detail.period_end)}`}
-							/>
+							<MetaRow label={t('invoiceDetail.billingPeriod')} value={formatBillingPeriodLong(detail.period_start, detail.period_end)} />
 						)}
 						<MetaRow label={t('invoiceDetail.issued')} value={formatDateShort(detail.finalized_at || detail.created_at)} />
 						{detail.due_date && <MetaRow label={t('invoiceDetail.dueDate')} value={formatDateShort(detail.due_date)} />}
