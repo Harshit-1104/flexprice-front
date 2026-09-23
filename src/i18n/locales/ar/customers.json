@@ -190,9 +190,10 @@
 	"usageTable": {
 		"columns": {
 			"feature": "الميزة",
-			"plan": "الخطة",
+			"source": "المصدر",
 			"value": "القيمة",
-			"usage": "الاستخدام"
+			"usage": "الاستخدام",
+			"measure": "Measure"
 		},
 		"units": "وحدات",
 		"unlimitedLabel": "غير محدود",
@@ -206,7 +207,26 @@
 			"dash": "—",
 			"usageProgressUnlimited": "{{usage}} / غير محدود"
 		},
-		"fallback": "--"
+		"fallback": "--",
+		"grantsTitle": "المنح",
+		"grantsTitleHint": "المنحة هي نافذة سماح واحدة. تُقاس وتُفوتر كل نافذة على حدة — ولا تُرحَّل الحصة غير المستخدمة إلى التالية.",
+		"grantsColumnStart": "البداية",
+		"grantsColumnEnd": "النهاية",
+		"grantsColumnStatus": "الحالة",
+		"grantsColumnUsage": "الاستخدام",
+		"grantState": {
+			"scheduled": "مجدولة",
+			"active": "نشطة",
+			"exhausted": "مستنفدة",
+			"closed": "مغلقة"
+		},
+		"grantExhaustedAt": "استُنفدت في {{at}}",
+		"grantDetailAllowance": "السماح",
+		"grantDetailMeasure": "المقياس",
+		"grantDetailSource": "المصدر",
+		"windowOverage": "over by {{amount}}",
+		"measureAmount": "Amount",
+		"measureQuantity": "Quantity"
 	},
 	"subscriptionCreate": {
 		"selectCustomerLabel": "العميل",
