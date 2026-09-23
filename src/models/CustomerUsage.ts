@@ -1,4 +1,4 @@
-import { GrantState } from './Entitlement';
+import { ENTITLEMENT_GRANT_DURATION_UNIT, ENTITLEMENT_GRANT_MEASURE, GrantState } from './Entitlement';
 import { JsonObject } from '@/types/common';
 import { BaseModel } from './base';
 import Feature from './Feature';
@@ -28,6 +28,15 @@ interface CustomerUsage extends BaseModel {
 	 * parallel feature is rendered from these. Absent for additive features.
 	 */
 	readonly buckets?: EntitlementBudget[];
+	/**
+	 * The rule the windows are cut from. Sent for an additive feature; a parallel one
+	 * carries one config per budget in `buckets` instead.
+	 */
+	readonly grant_quota?: string;
+	readonly grant_duration_value?: number;
+	readonly grant_duration_unit?: ENTITLEMENT_GRANT_DURATION_UNIT;
+	readonly grant_measure?: ENTITLEMENT_GRANT_MEASURE;
+	readonly grant_unlimited?: boolean;
 }
 
 /** One independent budget within a parallel feature. */
@@ -35,10 +44,10 @@ export interface EntitlementBudget {
 	readonly entitlement_id: string;
 	readonly source_entity_id: string;
 	readonly usage_limit?: number | null;
-	readonly grant_measure?: string;
+	readonly grant_measure?: ENTITLEMENT_GRANT_MEASURE;
 	readonly grant_quota?: string;
 	readonly grant_duration_value?: number;
-	readonly grant_duration_unit?: string;
+	readonly grant_duration_unit?: ENTITLEMENT_GRANT_DURATION_UNIT;
 	readonly grant_unlimited?: boolean;
 }
 

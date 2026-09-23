@@ -115,6 +115,12 @@ export interface GrantAllowanceState {
 	/** Open right now, decided by the server's clock rather than the client's. */
 	readonly is_active: boolean;
 	readonly last_computed_at?: string;
+	/**
+	 * When usage first reached the quota. Absent while the window still has room and
+	 * on an unlimited window. Overage is billed from here, so this — not valid_to —
+	 * is what answers "when did this run out".
+	 */
+	readonly quota_crossed_at?: string;
 }
 
 export interface GrantState {

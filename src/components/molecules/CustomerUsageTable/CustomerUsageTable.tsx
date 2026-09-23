@@ -64,6 +64,9 @@ const allowancesOf = (row: UsageRow): GrantAllowanceState[] => {
 /** A row is worth opening only when there are windows behind it. */
 const hasAllowances = (row: UsageRow) => allowancesOf(row).length > 0;
 
+/** The rule a row's windows are cut from: the budget's own, or the feature's. */
+const configOf = (row: UsageRow) => row.budget ?? row.usage;
+
 /** The source that funds a budget, so its row can name and link to it. */
 const sourceOf = (row: UsageRow): EntitlementSource | undefined => {
 	if (!row.budget) return row.usage.sources?.[0];
@@ -73,6 +76,9 @@ const sourceOf = (row: UsageRow): EntitlementSource | undefined => {
 const CustomerUsageTable: FC<Props> = ({ data, allowRedirect = true }) => {
 	const { t } = useTranslation('customers');
 	const [ledgerRow, setLedgerRow] = useState<UsageRow | null>(null);
+	// Sampled on the click rather than during render, so the ledger's rows all agree
+	// on which window is current.
+	const [ledgerOpenedAt, setLedgerOpenedAt] = useState(0);
 
 	const rows: UsageRow[] = useMemo(
 		() =>
@@ -299,13 +305,18 @@ const CustomerUsageTable: FC<Props> = ({ data, allowRedirect = true }) => {
 				columns={columnData}
 				variant='no-bordered'
 				isRowClickable={hasAllowances}
-				onRowClick={setLedgerRow}
+				onRowClick={(row) => {
+					setLedgerOpenedAt(Date.now());
+					setLedgerRow(row);
+				}}
 			/>
 			<GrantWindowLedger
 				allowances={ledgerRow ? allowancesOf(ledgerRow) : []}
-				unitLabel={ledgerRow?.usage.feature?.unit_plural}
+				config={ledgerRow ? configOf(ledgerRow) : undefined}
+				sourceName={ledgerRow ? getEntityName(sourceOf(ledgerRow)) : undefined}
 				featureName={ledgerRow?.usage.feature?.name}
 				budgetName={ledgerRow?.budget ? getEntityName(sourceOf(ledgerRow)) : undefined}
+				now={ledgerOpenedAt}
 				isOpen={Boolean(ledgerRow)}
 				onOpenChange={(open) => !open && setLedgerRow(null)}
 			/>
