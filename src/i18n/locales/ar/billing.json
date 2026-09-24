@@ -394,8 +394,6 @@
 			"columnQty": "الكمية",
 			"columnPrice": "السعر",
 			"columnPeriod": "الفترة",
-			"directionIncrease": "زيادة",
-			"directionDecrease": "تخفيض",
 			"subscriptionUpdated": "سيتم تحديث <bold>الاشتراك</bold> ليعكس هذه التغييرات.",
 			"noExtraBillingDetails": "لم تُضمَّن تفاصيل فوترة إضافية في هذه المعاينة.",
 			"noBillingChanges": "لم تُرجَع تغييرات فوترة لهذه المعاينة."

@@ -394,8 +394,6 @@
 			"columnQty": "Qty",
 			"columnPrice": "Price",
 			"columnPeriod": "Period",
-			"directionIncrease": "Increase",
-			"directionDecrease": "Decrease",
 			"subscriptionUpdated": "<bold>Subscription</bold> will be updated to reflect these changes.",
 			"noExtraBillingDetails": "No additional billing details were included in this preview.",
 			"noBillingChanges": "No billing changes returned for this preview."

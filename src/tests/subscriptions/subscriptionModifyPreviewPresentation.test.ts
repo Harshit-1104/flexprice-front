@@ -8,66 +8,10 @@ import {
 	buildLineItemChangeRows,
 	formatCompactLineItemPeriod,
 	formatLineItemRowPrice,
-	getPriceChangePreviewCopy,
-	getQuantityChangePreviewCopy,
-	getQuantityDeltaDirection,
 	resolveInvoiceAmountSource,
 } from '@/utils/subscription/subscriptionModifyPreviewPresentation';
 
 describe('subscriptionModifyPreviewPresentation', () => {
-	describe('getQuantityDeltaDirection', () => {
-		test('increase', () => {
-			expect(getQuantityDeltaDirection('1', '2')).toBe('increase');
-			expect(getQuantityDeltaDirection('10', '10.5')).toBe('increase');
-		});
-		test('decrease', () => {
-			expect(getQuantityDeltaDirection('5', '3')).toBe('decrease');
-		});
-		test('unchanged', () => {
-			expect(getQuantityDeltaDirection('2', '2')).toBe('unchanged');
-		});
-	});
-
-	describe('getQuantityChangePreviewCopy', () => {
-		test('labels decrease', () => {
-			const c = getQuantityChangePreviewCopy({
-				lineItemDisplayName: 'Seats',
-				previousQuantity: '10',
-				newQuantity: '5',
-				currency: 'USD',
-			});
-			expect(c.direction).toBe('decrease');
-			expect(c.directionLabel).toBe('Quantity decrease');
-			expect(c.fromDisplay).toBe('10');
-			expect(c.toDisplay).toBe('5');
-		});
-	});
-
-	describe('getPriceChangePreviewCopy', () => {
-		const base = { lineItemDisplayName: 'Seats', previousQuantity: '1', newQuantity: '1', currency: 'USD' };
-
-		test('null when price is not part of the edit', () => {
-			expect(getPriceChangePreviewCopy(base)).toBeNull();
-		});
-
-		test('null when the price is numerically unchanged', () => {
-			expect(getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '100.00' })).toBeNull();
-		});
-
-		test('keeps small prices exact instead of exponent form', () => {
-			const c = getPriceChangePreviewCopy({ ...base, previousAmount: '0.0000001', newAmount: '0.00000015' });
-			expect(c?.fromDisplay).toBe('$0.0000001');
-			expect(c?.toDisplay).toBe('$0.00000015');
-		});
-
-		test('formats from and to as money', () => {
-			const c = getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '150' });
-			expect(c?.direction).toBe('increase');
-			expect(c?.fromDisplay).toMatch(/100/);
-			expect(c?.toDisplay).toMatch(/150/);
-		});
-	});
-
 	describe('formatLineItemRowPrice', () => {
 		const ctx = {
 			lineItemDisplayName: 'Seats',
@@ -81,6 +25,10 @@ describe('subscriptionModifyPreviewPresentation', () => {
 		test('ended line shows old price, new line shows new price', () => {
 			expect(formatLineItemRowPrice('ended', ctx)).toMatch(/60/);
 			expect(formatLineItemRowPrice('created', ctx)).toMatch(/80/);
+		});
+
+		test('keeps small prices exact instead of exponent form', () => {
+			expect(formatLineItemRowPrice('created', { ...ctx, newAmount: '0.0000001' })).toBe('$0.0000001');
 		});
 
 		test('null without price context', () => {
@@ -241,7 +189,7 @@ describe('subscriptionModifyPreviewPresentation', () => {
 			const rows = buildLineItemChangeRows(items);
 			expect(rows).toHaveLength(2);
 			expect(rows[0].kind).toBe('ended');
-			expect(rows[0].label).toBe('Ends');
+			expect(rows[0].label).toBe('Ending line');
 			expect(rows[0].quantityDisplay).toBe('1');
 			expect(rows[1].kind).toBe('created');
 			expect(rows[1].label).toBe('New line');

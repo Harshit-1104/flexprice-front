@@ -16,51 +16,6 @@ export interface QuantityChangePreviewContext {
 	newAmount?: string;
 }
 
-export type QuantityDeltaDirection = 'increase' | 'decrease' | 'unchanged';
-
-function parseQuantityForCompare(q: string): number {
-	const n = Number(String(q).trim().replace(/,/g, ''));
-	return Number.isFinite(n) ? n : NaN;
-}
-
-export function getQuantityDeltaDirection(previousQuantity: string, newQuantity: string): QuantityDeltaDirection {
-	const a = parseQuantityForCompare(previousQuantity);
-	const b = parseQuantityForCompare(newQuantity);
-	if (Number.isNaN(a) || Number.isNaN(b)) return 'unchanged';
-	if (b > a) return 'increase';
-	if (b < a) return 'decrease';
-	return 'unchanged';
-}
-
-export function getQuantityChangePreviewCopy(ctx: QuantityChangePreviewContext): {
-	direction: QuantityDeltaDirection;
-	directionLabel: string;
-	fromDisplay: string;
-	toDisplay: string;
-} {
-	const direction = getQuantityDeltaDirection(ctx.previousQuantity, ctx.newQuantity);
-	const fromDisplay = ctx.previousQuantity.trim();
-	const toDisplay = ctx.newQuantity.trim();
-	const directionLabel = direction === 'increase' ? 'Quantity increase' : direction === 'decrease' ? 'Quantity decrease' : 'Same quantity';
-	return { direction, directionLabel, fromDisplay, toDisplay };
-}
-
-/** Price from → to for the preview header; null when the price is not being changed. */
-export function getPriceChangePreviewCopy(ctx: QuantityChangePreviewContext): {
-	direction: QuantityDeltaDirection;
-	fromDisplay: string;
-	toDisplay: string;
-} | null {
-	if (ctx.previousAmount === undefined || ctx.newAmount === undefined) return null;
-	const direction = getQuantityDeltaDirection(ctx.previousAmount, ctx.newAmount);
-	if (direction === 'unchanged') return null;
-	return {
-		direction,
-		fromDisplay: formatDecimalStringMoney(ctx.currency, ctx.previousAmount),
-		toDisplay: formatDecimalStringMoney(ctx.currency, ctx.newAmount),
-	};
-}
-
 /**
  * Money display straight from a decimal string, so tiny or long prices aren't rounded or shown
  * in exponent form ("1e-7") by a Number round-trip. Trailing fractional zeros are dropped.
@@ -250,7 +205,7 @@ export function buildLineItemChangeRows(lineItems: ChangedLineItem[]): LineItemC
 			case SUBSCRIPTION_MODIFY_LINE_ITEM_ACTION.UPDATED:
 				return { id: li.id, kind: 'updated', label: 'Updated', quantityDisplay: qty, periodDisplay };
 			case SUBSCRIPTION_MODIFY_LINE_ITEM_ACTION.ENDED:
-				return { id: li.id, kind: 'ended', label: 'Ends', quantityDisplay: qty, periodDisplay };
+				return { id: li.id, kind: 'ended', label: 'Ending line', quantityDisplay: qty, periodDisplay };
 			default:
 				return { id: li.id, kind: 'other', label: 'Change', quantityDisplay: qty, periodDisplay };
 		}
