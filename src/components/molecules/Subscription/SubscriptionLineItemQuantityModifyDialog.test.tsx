@@ -183,4 +183,31 @@ describe('SubscriptionLineItemQuantityModifyDialog', () => {
 		expect(screen.getByPlaceholderText('e.g. 10')).toBeInTheDocument();
 		expect(screen.queryByPlaceholderText('e.g. 20.00')).not.toBeInTheDocument();
 	});
+
+	it.each(['1,20', '0x10', '1e3', '-5'])('rejects ambiguous price input %s without calling preview', async (value) => {
+		renderDialog(flatFeeLineItem);
+
+		fireEvent.change(screen.getByPlaceholderText('e.g. 20.00'), { target: { value } });
+		fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/Enter a valid price/)).toBeInTheDocument();
+		});
+		expect(mockPreview).not.toHaveBeenCalled();
+	});
+
+	it('accepts correctly grouped thousands in the price', async () => {
+		mockPreview.mockResolvedValue({ changed_resources: {} });
+		renderDialog(flatFeeLineItem);
+
+		fireEvent.change(screen.getByPlaceholderText('e.g. 20.00'), { target: { value: '1,200.50' } });
+		fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+		await waitFor(() => {
+			expect(mockPreview).toHaveBeenCalledWith('sub_1', {
+				type: SUBSCRIPTION_MODIFY_TYPE.LINE_ITEM_CHANGE,
+				line_item_change_params: { line_items: [{ id: 'li_1', amount: '1200.50' }] },
+			});
+		});
+	});
 });

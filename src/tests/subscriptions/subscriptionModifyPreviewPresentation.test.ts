@@ -54,6 +54,12 @@ describe('subscriptionModifyPreviewPresentation', () => {
 			expect(getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '100.00' })).toBeNull();
 		});
 
+		test('keeps small prices exact instead of exponent form', () => {
+			const c = getPriceChangePreviewCopy({ ...base, previousAmount: '0.0000001', newAmount: '0.00000015' });
+			expect(c?.fromDisplay).toBe('$0.0000001');
+			expect(c?.toDisplay).toBe('$0.00000015');
+		});
+
 		test('formats from and to as money', () => {
 			const c = getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '150' });
 			expect(c?.direction).toBe('increase');

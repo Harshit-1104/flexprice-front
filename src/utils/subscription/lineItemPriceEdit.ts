@@ -13,6 +13,14 @@ export function getEditableLineItemAmount(lineItem: LineItem): string | undefine
 	return price.amount ?? undefined;
 }
 
+/**
+ * Strict price input check: plain digits or correctly grouped thousands ("1,200"), optional "." decimals.
+ * Rejects "1,20" (a comma-decimal would otherwise be read as 120), hex, exponents and negatives.
+ */
+export function isValidPriceString(value: string): boolean {
+	return /^(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$/.test(value.trim());
+}
+
 /** Numeric equality for decimal strings ("100" === "100.00"); strips comma separators. */
 export function isSameDecimal(a: string, b: string): boolean {
 	const x = Number(a.trim().replace(/,/g, ''));

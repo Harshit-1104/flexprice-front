@@ -3,7 +3,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import type { LineItem } from '@/models/Subscription';
 import { useSubscriptionQuantityModify } from '@/hooks/useSubscriptionQuantityModify';
 import { buildLineItemChangeModifyRequest } from '@/utils/subscription/buildLineItemChangeModifyRequest';
-import { getEditableLineItemAmount, isSameDecimal } from '@/utils/subscription/lineItemPriceEdit';
+import { getEditableLineItemAmount, isSameDecimal, isValidPriceString } from '@/utils/subscription/lineItemPriceEdit';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 import { isValidNonNegativeQuantityString } from '@/utils/subscription/quantityValidation';
 import type { ExecuteSubscriptionModifyRequest } from '@/types/dto/Subscription';
@@ -97,8 +97,8 @@ const SubscriptionLineItemQuantityModifyDialog: FC<SubscriptionLineItemQuantityM
 			setFormError('Enter a valid quantity — zero or greater.');
 			return null;
 		}
-		if (currentAmount !== undefined && !isValidNonNegativeQuantityString(amountInput)) {
-			setFormError('Enter a valid price — zero or greater.');
+		if (currentAmount !== undefined && !isValidPriceString(amountInput)) {
+			setFormError('Enter a valid price, e.g. 1200.50 — use "." for decimals.');
 			return null;
 		}
 		// Send only what changed; an omitted field keeps its current value on the backend.

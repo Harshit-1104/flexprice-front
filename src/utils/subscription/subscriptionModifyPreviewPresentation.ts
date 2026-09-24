@@ -54,13 +54,22 @@ export function getPriceChangePreviewCopy(ctx: QuantityChangePreviewContext): {
 	if (ctx.previousAmount === undefined || ctx.newAmount === undefined) return null;
 	const direction = getQuantityDeltaDirection(ctx.previousAmount, ctx.newAmount);
 	if (direction === 'unchanged') return null;
-	const from = parseQuantityForCompare(ctx.previousAmount);
-	const to = parseQuantityForCompare(ctx.newAmount);
 	return {
 		direction,
-		fromDisplay: formatMoneyForPreview(ctx.currency, from),
-		toDisplay: formatMoneyForPreview(ctx.currency, to),
+		fromDisplay: formatDecimalStringMoney(ctx.currency, ctx.previousAmount),
+		toDisplay: formatDecimalStringMoney(ctx.currency, ctx.newAmount),
 	};
+}
+
+/**
+ * Money display straight from a decimal string, so tiny or long prices aren't rounded or shown
+ * in exponent form ("1e-7") by a Number round-trip. Trailing fractional zeros are dropped.
+ */
+function formatDecimalStringMoney(currency: string, amount: string): string {
+	const plain = amount.trim().replace(/,/g, '');
+	if (!/^\d+(\.\d+)?$/.test(plain)) return '—';
+	const trimmed = plain.includes('.') ? plain.replace(/0+$/, '').replace(/\.$/, '') : plain;
+	return `${getCurrencySymbol(currency || 'USD')}${formatAmount(trimmed)}`;
 }
 
 /**
@@ -257,8 +266,7 @@ export function formatLineItemRowPrice(kind: LineItemChangeRowKind, ctx: Quantit
 	if (!ctx || ctx.previousAmount === undefined) return null;
 	const amount = kind === 'ended' ? ctx.previousAmount : kind === 'other' ? undefined : (ctx.newAmount ?? ctx.previousAmount);
 	if (amount === undefined) return '—';
-	const n = parseQuantityForCompare(amount);
-	return Number.isNaN(n) ? '—' : formatMoneyForPreview(ctx.currency, n);
+	return formatDecimalStringMoney(ctx.currency, amount);
 }
 
 export interface LineItemChangeBullet {
