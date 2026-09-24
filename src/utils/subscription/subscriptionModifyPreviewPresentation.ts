@@ -5,12 +5,15 @@ import type { ChangedInvoice, ChangedLineItem } from '@/types/dto/Subscription';
 import formatDate from '@/utils/common/format_date';
 import { getCurrencySymbol } from '@/utils/common/helper_functions';
 
-/** Dialog / caller context for quantity modify preview (API does not return “before” quantity). */
+/** Dialog / caller context for line item modify preview (API does not return “before” quantity or price). */
 export interface QuantityChangePreviewContext {
 	lineItemDisplayName: string;
 	previousQuantity: string;
 	newQuantity: string;
 	currency: string;
+	/** Per-unit price before the change; set together with `newAmount` when the price is being edited. */
+	previousAmount?: string;
+	newAmount?: string;
 }
 
 export type QuantityDeltaDirection = 'increase' | 'decrease' | 'unchanged';
@@ -40,6 +43,24 @@ export function getQuantityChangePreviewCopy(ctx: QuantityChangePreviewContext):
 	const toDisplay = ctx.newQuantity.trim();
 	const directionLabel = direction === 'increase' ? 'Quantity increase' : direction === 'decrease' ? 'Quantity decrease' : 'Same quantity';
 	return { direction, directionLabel, fromDisplay, toDisplay };
+}
+
+/** Price from → to for the preview header; null when the price is not being changed. */
+export function getPriceChangePreviewCopy(ctx: QuantityChangePreviewContext): {
+	direction: QuantityDeltaDirection;
+	fromDisplay: string;
+	toDisplay: string;
+} | null {
+	if (ctx.previousAmount === undefined || ctx.newAmount === undefined) return null;
+	const direction = getQuantityDeltaDirection(ctx.previousAmount, ctx.newAmount);
+	if (direction === 'unchanged') return null;
+	const from = parseQuantityForCompare(ctx.previousAmount);
+	const to = parseQuantityForCompare(ctx.newAmount);
+	return {
+		direction,
+		fromDisplay: formatMoneyForPreview(ctx.currency, from),
+		toDisplay: formatMoneyForPreview(ctx.currency, to),
+	};
 }
 
 /**
@@ -90,9 +111,21 @@ function resolveBillingImpacts(changedInvoices: ChangedInvoice[], latestInvoice:
 	const amountSource = resolveInvoiceAmountSource(changedInvoices, latestInvoice ?? null);
 
 	return changedInvoices.map((inv) => {
+		// Prefer the invoice / wallet transaction returned with the change itself; fall back to latest_invoice.
+		const embeddedAmount =
+			inv.action === SUBSCRIPTION_MODIFY_INVOICE_RESOURCE_ACTION.CREATED && inv.invoice
+				? getInvoiceAmountForPreviewDisplay(inv.invoice)
+				: inv.action === SUBSCRIPTION_MODIFY_INVOICE_RESOURCE_ACTION.WALLET_CREDIT && inv.wallet_transaction
+					? Number(inv.wallet_transaction.amount)
+					: null;
 		const showAmount = amountSource != null && (changedInvoices.length === 1 || inv.id === amountSource.id);
-		const rawAmount = showAmount ? getInvoiceAmountForPreviewDisplay(amountSource!) : null;
-		const currency = amountSource?.currency ?? latestInvoice?.currency ?? 'USD';
+		const rawAmount =
+			embeddedAmount != null && Number.isFinite(embeddedAmount)
+				? embeddedAmount
+				: showAmount
+					? getInvoiceAmountForPreviewDisplay(amountSource!)
+					: null;
+		const currency = inv.invoice?.currency ?? amountSource?.currency ?? latestInvoice?.currency ?? 'USD';
 		const hasAmount = rawAmount != null && rawAmount > 0;
 		const amountText = hasAmount ? formatMoneyForPreview(currency, rawAmount!) : undefined;
 
@@ -213,6 +246,19 @@ export function buildLineItemChangeRows(lineItems: ChangedLineItem[]): LineItemC
 				return { id: li.id, kind: 'other', label: 'Change', quantityDisplay: qty, periodDisplay };
 		}
 	});
+}
+
+/**
+ * Per-unit price for a preview row. The API doesn't return prices on changed line items, so derive it from
+ * the edit: the ended line carried the old price, the replacement carries the new one.
+ * Null when the caller has no price context (price not editable for this charge).
+ */
+export function formatLineItemRowPrice(kind: LineItemChangeRowKind, ctx: QuantityChangePreviewContext | undefined): string | null {
+	if (!ctx || ctx.previousAmount === undefined) return null;
+	const amount = kind === 'ended' ? ctx.previousAmount : kind === 'other' ? undefined : (ctx.newAmount ?? ctx.previousAmount);
+	if (amount === undefined) return '—';
+	const n = parseQuantityForCompare(amount);
+	return Number.isNaN(n) ? '—' : formatMoneyForPreview(ctx.currency, n);
 }
 
 export interface LineItemChangeBullet {

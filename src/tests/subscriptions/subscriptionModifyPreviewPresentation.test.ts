@@ -7,6 +7,8 @@ import {
 	buildBillingImpactRows,
 	buildLineItemChangeRows,
 	formatCompactLineItemPeriod,
+	formatLineItemRowPrice,
+	getPriceChangePreviewCopy,
 	getQuantityChangePreviewCopy,
 	getQuantityDeltaDirection,
 	resolveInvoiceAmountSource,
@@ -38,6 +40,45 @@ describe('subscriptionModifyPreviewPresentation', () => {
 			expect(c.directionLabel).toBe('Quantity decrease');
 			expect(c.fromDisplay).toBe('10');
 			expect(c.toDisplay).toBe('5');
+		});
+	});
+
+	describe('getPriceChangePreviewCopy', () => {
+		const base = { lineItemDisplayName: 'Seats', previousQuantity: '1', newQuantity: '1', currency: 'USD' };
+
+		test('null when price is not part of the edit', () => {
+			expect(getPriceChangePreviewCopy(base)).toBeNull();
+		});
+
+		test('null when the price is numerically unchanged', () => {
+			expect(getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '100.00' })).toBeNull();
+		});
+
+		test('formats from and to as money', () => {
+			const c = getPriceChangePreviewCopy({ ...base, previousAmount: '100', newAmount: '150' });
+			expect(c?.direction).toBe('increase');
+			expect(c?.fromDisplay).toMatch(/100/);
+			expect(c?.toDisplay).toMatch(/150/);
+		});
+	});
+
+	describe('formatLineItemRowPrice', () => {
+		const ctx = {
+			lineItemDisplayName: 'Seats',
+			previousQuantity: '1',
+			newQuantity: '3',
+			currency: 'USD',
+			previousAmount: '60',
+			newAmount: '80',
+		};
+
+		test('ended line shows old price, new line shows new price', () => {
+			expect(formatLineItemRowPrice('ended', ctx)).toMatch(/60/);
+			expect(formatLineItemRowPrice('created', ctx)).toMatch(/80/);
+		});
+
+		test('null without price context', () => {
+			expect(formatLineItemRowPrice('created', { ...ctx, previousAmount: undefined, newAmount: undefined })).toBeNull();
 		});
 	});
 
@@ -122,6 +163,36 @@ describe('subscriptionModifyPreviewPresentation', () => {
 			const rows = buildBillingImpactRows(changed, null);
 			expect(rows[0].title).toBe('Wallet credit');
 			expect(rows[0].amountText).toBeUndefined();
+		});
+	});
+
+	describe('embedded change amounts', () => {
+		test('wallet credit reads wallet_transaction.amount over latest_invoice', () => {
+			const changed = [
+				{
+					id: '',
+					action: SUBSCRIPTION_MODIFY_INVOICE_RESOURCE_ACTION.WALLET_CREDIT,
+					status: 'preview',
+					wallet_transaction: { amount: 25 },
+				},
+			] as ChangedInvoice[];
+			const latest = { id: 'inv_old', total: 999, currency: 'USD' } as Invoice;
+			const rows = buildBillingImpactRows(changed, latest);
+			expect(rows[0].amountText).toMatch(/25/);
+			expect(rows[0].amountText).not.toMatch(/999/);
+		});
+
+		test('created invoice reads the embedded invoice', () => {
+			const changed = [
+				{
+					id: '',
+					action: SUBSCRIPTION_MODIFY_INVOICE_RESOURCE_ACTION.CREATED,
+					status: 'preview',
+					invoice: { total: 12, amount_due: 12, currency: 'USD' },
+				},
+			] as ChangedInvoice[];
+			const rows = buildBillingImpactRows(changed, null);
+			expect(rows[0].amountText).toMatch(/12/);
 		});
 	});
 
