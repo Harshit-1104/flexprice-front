@@ -142,6 +142,7 @@ export { default as GroupDrawer } from './GroupDrawer';
 
 // Events & Analytics
 export { default as EventsTable } from './Events';
+export { EventsLoadError } from './Events';
 export { default as EventFilter } from './EventFilter';
 export type { EventFilterData } from './EventFilter';
 

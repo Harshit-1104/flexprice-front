@@ -102,6 +102,15 @@ axiosClient.interceptors.response.use(
 			const msg = getApiErrorMessage(errorData, fallback);
 			const rejection = new Error(msg);
 			(rejection as Error & { cause?: unknown }).cause = errorData ?? error;
+			// The status is attached explicitly rather than left to be recovered from the body:
+			// error responses do not reliably carry `http_status_code` (a 429 from an edge proxy
+			// carries no JSON body at all), and callers that back off need to tell a rate limit
+			// apart from a plain failure. `retryAfter` is the header's seconds value when sent.
+			(rejection as Error & { status?: number }).status = status;
+			const retryAfter = Number(error.response.headers?.['retry-after']);
+			if (Number.isFinite(retryAfter) && retryAfter >= 0) {
+				(rejection as Error & { retryAfter?: number }).retryAfter = retryAfter;
+			}
 			return Promise.reject(rejection);
 		} else if (error.request) {
 			// Request was made but no response received

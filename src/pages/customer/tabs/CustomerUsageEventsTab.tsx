@@ -1,10 +1,8 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card } from '@/components/atoms';
-import { EventsTable, QueryBuilder } from '@/components/molecules';
-import { Event } from '@/models/Event';
-import EventsApi from '@/api/EventsApi';
+import { EventsTable, QueryBuilder, EventsLoadError } from '@/components/molecules';
 import CustomerApi from '@/api/CustomerApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
@@ -19,9 +17,9 @@ import {
 } from '@/types/common/QueryBuilder';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import usePagination from '@/hooks/usePagination';
+import useEventsPagination from '@/hooks/useEventsPagination';
 import { TypedBackendFilter } from '@/types/formatters/QueryBuilder';
 import { GetEventsPayload } from '@/types/dto/Events';
-import { logger } from '@/utils/common/Logger';
 import EmptyState from '@/components/customer-portal/EmptyState';
 import { useTranslation } from 'react-i18next';
 
@@ -67,12 +65,6 @@ const CustomerUsageEventsTab = () => {
 	const { t: tDev } = useTranslation('developers');
 	const { id: customerId } = useParams();
 	const { reset } = usePagination();
-	const [events, setEvents] = useState<Event[]>([]);
-	const [hasMore, setHasMore] = useState(true);
-	const [loading, setLoading] = useState(false);
-	const [iterLastKey, setIterLastKey] = useState<string | undefined>(undefined);
-	const observer = useRef<IntersectionObserver | null>(null);
-	const requestIdRef = useRef(0);
 
 	const sortingOptions: SortOption[] = useMemo(
 		() => [
@@ -196,81 +188,17 @@ const CustomerUsageEventsTab = () => {
 		};
 	}, [sanitizedFilters, customer?.external_id]);
 
-	// Fetch events from API. `force` bypasses the in-flight guard so a filter change or manual
-	// refresh always supersedes a stale in-flight pagination request instead of being dropped by
-	// it - without it, refetchEvents (called right after setHasMore(true)) would still see the
-	// pre-update hasMore/loading values from this closure, since React state updates are async.
-	const fetchEvents = useCallback(
-		async (iterLastKey?: string, force = false) => {
-			// external_id is a hard precondition (not an in-flight guard), so force never bypasses it.
-			if (!customer?.external_id) return;
-			if (!force && (!hasMore || loading)) return;
-			const requestId = ++requestIdRef.current;
-			setLoading(true);
-			try {
-				const response = await EventsApi.getRawEvents({
-					iter_last_key: iterLastKey,
-					page_size: 10,
-					...apiParams,
-				});
-
-				if (requestIdRef.current !== requestId) return;
-
-				if (response.events) {
-					setEvents((prevEvents) => (iterLastKey ? [...prevEvents, ...response.events] : response.events));
-					setIterLastKey(response.iter_last_key);
-					setHasMore(response.has_more);
-				}
-			} catch (error) {
-				logger.error('Error fetching events:', error);
-			} finally {
-				if (requestIdRef.current === requestId) setLoading(false);
-			}
-		},
-		[apiParams, hasMore, loading, customer?.external_id],
-	);
-
-	const lastElementRef = useCallback(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(node: any) => {
-			if (loading) return;
-			if (observer.current) observer.current.disconnect();
-			observer.current = new IntersectionObserver((entries) => {
-				if (entries[0].isIntersecting && hasMore) {
-					fetchEvents(iterLastKey);
-				}
-			});
-			if (node) observer.current.observe(node);
-		},
-		[loading, hasMore, iterLastKey, fetchEvents],
-	);
-
-	const refetchEvents = () => {
-		// Disconnect the pagination observer first: it holds the pre-refresh iterLastKey in its
-		// closure, and if it fires after this forced refresh starts, it would append a stale page
-		// onto the freshly-refreshed first page.
-		observer.current?.disconnect();
-		setEvents([]);
-		setIterLastKey(undefined);
-		setHasMore(true);
-		fetchEvents(undefined, true);
-	};
+	// external_id is a hard precondition: every page is scoped to this customer, so there is
+	// nothing meaningful to request until it has loaded.
+	const { events, loading, hasMore, error, isRateLimited, sentinelRef, refresh, retry } = useEventsPagination({
+		params: apiParams,
+		enabled: !!customer?.external_id,
+	});
 
 	// Reset pagination when filters change
 	useEffect(() => {
 		reset();
 	}, [sanitizedFilters, sanitizedSorts]);
-
-	// Refetch events when filters change
-	useEffect(() => {
-		if (!customer?.external_id) return;
-		observer.current?.disconnect();
-		setEvents([]);
-		setIterLastKey(undefined);
-		setHasMore(true);
-		fetchEvents(undefined, true);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [apiParams]);
 
 	if (customerLoading) {
 		return (
@@ -305,13 +233,13 @@ const CustomerUsageEventsTab = () => {
 					onSortChange={setSorts}
 					selectedSorts={sorts}
 				/>
-				<Button variant='outline' onClick={refetchEvents}>
+				<Button variant='outline' onClick={refresh}>
 					<RefreshCw />
 				</Button>
 			</div>
 			<div className='bg-surface rounded-md '>
 				<EventsTable data={events} />
-				<div ref={lastElementRef} />
+				<div ref={sentinelRef} />
 				{loading && (
 					<div className='space-y-4 mt-4'>
 						<Skeleton className='h-8 w-full' />
@@ -319,7 +247,8 @@ const CustomerUsageEventsTab = () => {
 						<Skeleton className='h-8 w-full' />
 					</div>
 				)}
-				{!hasMore && events.length === 0 && (
+				{!loading && error && <EventsLoadError message={error} isRateLimited={isRateLimited} onRetry={retry} />}
+				{!hasMore && !error && events.length === 0 && (
 					<p className=' text-content-slate-muted text-xs font-normal font-sans mt-4'>{t('tabPanels.usageEvents.noEventsFound')}</p>
 				)}
 			</div>

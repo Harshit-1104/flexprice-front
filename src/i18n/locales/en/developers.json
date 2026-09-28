@@ -455,7 +455,11 @@
 			"viewLatestData": "View latest data"
 		},
 		"list": {
-			"noEventsFound": "No events found"
+			"noEventsFound": "No events found",
+			"loadFailedTitle": "Couldn't load more events",
+			"rateLimitedTitle": "Too many requests",
+			"rateLimitedDescription": "The events API is rate limiting this request. Loading will resume automatically in a few seconds.",
+			"retry": "Retry"
 		}
 	},
 	"usage": {

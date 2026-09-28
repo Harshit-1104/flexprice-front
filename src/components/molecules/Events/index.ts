@@ -1,5 +1,6 @@
 export { default } from './EventsTable';
 export { default as EventPropertiesDrawer } from './EventPropertiesDrawer';
+export { default as EventsLoadError } from './EventsLoadError';
 export { default as JsonCodeBlock } from './JsonCodeBlock';
 export { default as ProcessedEventsSection } from './ProcessedEventsSection';
 export { default as EventVersionsSection } from './EventVersionsSection';

@@ -1,18 +1,16 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button, Page } from '@/components/atoms';
-import { EventsTable, ApiDocsContent, PropertyFilterQueryBuilder } from '@/components/molecules';
+import { EventsTable, ApiDocsContent, PropertyFilterQueryBuilder, EventsLoadError } from '@/components/molecules';
 import { API_DOCS_TAGS } from '@/constants/apiDocsTags';
-import { Event } from '@/models/Event';
-import EventsApi from '@/api/EventsApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { FilterField, FilterFieldType, DataType, FilterOperator, SortOption, SortDirection } from '@/types/common/QueryBuilder';
 import useFilterSorting from '@/hooks/useFilterSorting';
 import usePagination from '@/hooks/usePagination';
+import useEventsPagination from '@/hooks/useEventsPagination';
 import { TypedBackendFilter } from '@/types/formatters/QueryBuilder';
 import { GetEventsPayload } from '@/types/dto/Events';
-import { logger } from '@/utils/common/Logger';
 import { useTranslation } from 'react-i18next';
 
 // Helper function to convert sanitized filters to Events API parameters
@@ -83,13 +81,7 @@ const createEmptyPropertyFilter = (): PropertyFilterRow => ({
 const EventsPage: React.FC = () => {
 	const { t } = useTranslation('developers');
 	const { reset } = usePagination();
-	const [events, setEvents] = useState<Event[]>([]);
-	const [hasMore, setHasMore] = useState(true);
-	const [loading, setLoading] = useState(false);
-	const [iterLastKey, setIterLastKey] = useState<string | undefined>(undefined);
 	const [propertyFilters, setPropertyFilters] = useState<PropertyFilterRow[]>([]);
-	const observer = useRef<IntersectionObserver | null>(null);
-	const requestIdRef = useRef(0);
 
 	const sortingOptions: SortOption[] = useMemo(
 		() => [
@@ -184,21 +176,6 @@ const EventsPage: React.FC = () => {
 		debounceTime: 300,
 	});
 
-	const lastElementRef = useCallback(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(node: any) => {
-			if (loading) return;
-			if (observer.current) observer.current.disconnect();
-			observer.current = new IntersectionObserver((entries) => {
-				if (entries[0].isIntersecting && hasMore) {
-					fetchEvents(iterLastKey);
-				}
-			});
-			if (node) observer.current.observe(node);
-		},
-		[loading, hasMore],
-	);
-
 	// Convert sanitized filters to API parameters - only include parameters that are actually specified
 	const apiParams = useMemo(() => {
 		const params = convertFiltersToEventParams(sanitizedFilters);
@@ -207,66 +184,17 @@ const EventsPage: React.FC = () => {
 		return params;
 	}, [sanitizedFilters, propertyFilters]);
 
-	// Fetch events from API. `force` bypasses the in-flight guard so a filter/sort
-	// change always supersedes a stale in-flight pagination request instead of being dropped by it.
-	const fetchEvents = useCallback(
-		async (iterLastKey?: string, force = false) => {
-			if (!force && (!hasMore || loading)) return;
-			const requestId = ++requestIdRef.current;
-			setLoading(true);
-			try {
-				const response = await EventsApi.getRawEvents({
-					iter_last_key: iterLastKey,
-					page_size: 10,
-					...apiParams,
-				});
-
-				if (requestIdRef.current !== requestId) return;
-
-				if (response.events) {
-					setEvents((prevEvents) => (iterLastKey ? [...prevEvents, ...response.events] : response.events));
-					setIterLastKey(response.iter_last_key);
-					setHasMore(response.has_more);
-				}
-			} catch (error) {
-				logger.error('Error fetching events:', error);
-			} finally {
-				if (requestIdRef.current === requestId) setLoading(false);
-			}
-		},
-		[apiParams, hasMore, loading],
-	);
+	const { events, loading, hasMore, error, isRateLimited, sentinelRef, refresh, retry } = useEventsPagination({ params: apiParams });
 
 	const resetFilters = () => {
 		setFilters(initialFilters);
 		setPropertyFilters([]);
 	};
 
-	// Re-fetch with the currently applied filters, unlike resetFilters which clears them - the
-	// standalone refresh button should refresh data, not reset the user's filter selections.
-	const refreshEvents = () => {
-		// Disconnect the pagination observer first: it holds the pre-refresh iterLastKey in its
-		// closure, and if it fires (e.g. the sentinel is still in view) after this forced refresh
-		// starts, it would append a stale page onto the freshly-refreshed first page.
-		observer.current?.disconnect();
-		setEvents([]);
-		setIterLastKey(undefined);
-		setHasMore(true);
-		fetchEvents(undefined, true);
-	};
-
 	// Reset pagination when filters change
 	useEffect(() => {
 		reset();
 	}, [sanitizedFilters, sanitizedSorts]);
-
-	// Refetch events when filters change
-	useEffect(() => {
-		setEvents([]);
-		setIterLastKey(undefined);
-		setHasMore(true);
-		fetchEvents(undefined, true);
-	}, [apiParams]);
 
 	return (
 		<Page heading={t('events.listPage.title')}>
@@ -287,13 +215,13 @@ const EventsPage: React.FC = () => {
 					}}
 					onFilterPopoverReset={resetFilters}
 				/>
-				<Button variant='outline' onClick={refreshEvents}>
+				<Button variant='outline' onClick={refresh}>
 					<RefreshCw />
 				</Button>
 			</div>
 			<div className='bg-surface rounded-md '>
 				<EventsTable data={events} />
-				<div ref={lastElementRef} />
+				<div ref={sentinelRef} />
 				{loading && (
 					<div className='space-y-4 mt-4'>
 						<Skeleton className='h-8 w-full' />
@@ -301,7 +229,8 @@ const EventsPage: React.FC = () => {
 						<Skeleton className='h-8 w-full' />
 					</div>
 				)}
-				{!hasMore && events.length === 0 && (
+				{!loading && error && <EventsLoadError message={error} isRateLimited={isRateLimited} onRetry={retry} />}
+				{!hasMore && !error && events.length === 0 && (
 					<p className=' text-content-slate-muted text-xs font-normal font-sans mt-4'>{t('events.list.noEventsFound')}</p>
 				)}
 			</div>

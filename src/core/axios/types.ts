@@ -15,7 +15,7 @@ export interface FailedApiEnvelope {
 export type ServerError = FailedApiEnvelope;
 
 /** Normalized rejection from the shared axios client (see interceptor). Prefer `.message`; inspect `.cause` for raw JSON. */
-export type HttpRejectedError = Error & { cause?: unknown };
+export type HttpRejectedError = Error & { cause?: unknown; status?: number; retryAfter?: number };
 
 /** Flat API error body (e.g. validation_error) returned as axios `response.data` */
 export interface FlatApiError {
@@ -41,11 +41,31 @@ export function isHttpNotFoundError(error: unknown): boolean {
 /** Extracts the HTTP status code the shared axios client attached to a rejected error, if any. */
 export function getHttpStatus(error: unknown): number | undefined {
 	if (!(error instanceof Error)) return undefined;
+	// `status` is set by the interceptor from the response itself, so it is present even when the
+	// body is empty or not JSON; the body's own `http_status_code` stays as the fallback for
+	// errors that were constructed elsewhere.
+	const status = (error as HttpRejectedError).status;
+	if (typeof status === 'number') return status;
 	const cause = (error as HttpRejectedError).cause;
 	if (cause && typeof cause === 'object') {
 		return (cause as FlatApiError).http_status_code;
 	}
 	return undefined;
+}
+
+/** True when the request was rejected because the caller is being rate limited. */
+export function isHttpRateLimitError(error: unknown): boolean {
+	return getHttpStatus(error) === 429;
+}
+
+/**
+ * Seconds the server asked the caller to wait, from the `Retry-After` header.
+ * Absent on most rate-limit responses, so callers still need their own backoff.
+ */
+export function getRetryAfterSeconds(error: unknown): number | undefined {
+	if (!(error instanceof Error)) return undefined;
+	const value = (error as HttpRejectedError).retryAfter;
+	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 /** True when the shared axios client rejected a 403 (e.g. a super_admin API key, not a user session). */
