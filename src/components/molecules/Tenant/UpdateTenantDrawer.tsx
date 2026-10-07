@@ -117,7 +117,9 @@ const useUpdateTenantForm = (tenantSchema: z.ZodTypeAny, initialData?: User) => 
 
 			if (initialData.tenant.billing_details.address.address_country && initialData.tenant.billing_details.address.address_state) {
 				const stateObj = State.getStatesOfCountry(initialData.tenant.billing_details.address.address_country).find(
-					(state) => state.name === initialData.tenant.billing_details.address.address_state,
+					(state) =>
+						state.isoCode === initialData.tenant.billing_details.address.address_state ||
+						state.name === initialData.tenant.billing_details.address.address_state,
 				);
 				if (stateObj) {
 					setActiveState(stateObj);
