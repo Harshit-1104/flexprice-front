@@ -296,7 +296,7 @@ export enum COLLECTION_METHOD {
 	SEND_INVOICE = 'send_invoice',
 }
 
-// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+// PaymentTerms (e.g. 15 NET, END_OF_MONTH) used to compute invoice due date from the invoice issue date
 export enum PAYMENT_TERMS {
 	NET_15 = '15 NET',
 	NET_30 = '30 NET',
@@ -304,6 +304,8 @@ export enum PAYMENT_TERMS {
 	NET_60 = '60 NET',
 	NET_75 = '75 NET',
 	NET_90 = '90 NET',
+	END_OF_MONTH = 'END_OF_MONTH',
+	END_OF_NEXT_MONTH = 'END_OF_NEXT_MONTH',
 }
 
 /**

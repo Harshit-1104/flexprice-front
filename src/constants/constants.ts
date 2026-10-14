@@ -194,6 +194,8 @@ export const paymentTermsOptions = [
 	{ label: 'NET 60', value: PAYMENT_TERMS.NET_60 },
 	{ label: 'NET 75', value: PAYMENT_TERMS.NET_75 },
 	{ label: 'NET 90', value: PAYMENT_TERMS.NET_90 },
+	{ label: 'End of month', value: PAYMENT_TERMS.END_OF_MONTH },
+	{ label: 'End of next month', value: PAYMENT_TERMS.END_OF_NEXT_MONTH },
 ];
 
 export const prorationBehaviorOptions = [

@@ -403,7 +403,7 @@ export interface CreateSubscriptionRequest {
 	gateway_payment_method_id?: string;
 	collection_method?: COLLECTION_METHOD;
 
-	// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+	// PaymentTerms (e.g. 15 NET, END_OF_MONTH) used to compute invoice due date from the invoice issue date
 	payment_terms?: PAYMENT_TERMS;
 
 	// Proration behavior
