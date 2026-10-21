@@ -53,4 +53,22 @@ export interface DashboardCostAnalyticsRequest {
 	// Pagination
 	limit?: number;
 	offset?: number;
+	property_filters?: Record<string, string[]>;
+}
+
+// Portal property lookups: the keys portal users may group or filter by, and one key's values.
+export interface PortalPropertyKeysRequest {
+	start_time: string;
+	end_time: string;
+	feature_ids?: string[];
+}
+
+export interface PortalPropertyValuesRequest extends PortalPropertyKeysRequest {
+	key: string;
+	prefix?: string;
+	limit?: number; // 1–200, default 50
+}
+
+export interface PropertyValuesResponse {
+	values: string[];
 }

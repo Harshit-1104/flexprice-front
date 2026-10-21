@@ -13,6 +13,12 @@ export const portalWalletBalanceQueryKey = (walletId?: string) => ['portal-walle
 
 export const portalInvoiceQueryKey = (invoiceId?: string) => ['portal-invoice', invoiceId] as const;
 
+export const portalPropertyKeysQueryKey = (start?: string, end?: string, featureIds?: string[]) =>
+	['portal-property-keys', start, end, featureIds] as const;
+
+export const portalPropertyValuesQueryKey = (start?: string, end?: string, featureIds?: string[], key?: string, prefix?: string) =>
+	['portal-property-values', start, end, featureIds, key, prefix] as const;
+
 /**
  * Every query root a completed top-up or payment invalidates.
  *

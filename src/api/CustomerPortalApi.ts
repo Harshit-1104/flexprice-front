@@ -1,6 +1,13 @@
 import { AxiosClient } from '@/core/axios/verbs';
 import { Customer, Invoice, RealtimeWalletBalance } from '@/models';
-import { UpdateCustomerRequest, GetUsageSummaryResponse } from '@/types/dto';
+import {
+	UpdateCustomerRequest,
+	GetUsageSummaryResponse,
+	PortalPropertyKeysRequest,
+	PortalPropertyValuesRequest,
+	PropertyKeysResponse,
+	PropertyValuesResponse,
+} from '@/types/dto';
 import {
 	GetCustomerUsageSummaryRequest,
 	DashboardPaginatedRequest,
@@ -106,6 +113,20 @@ class CustomerPortalApi {
 	 */
 	public static async getAnalytics(payload: DashboardAnalyticsRequest): Promise<GetUsageAnalyticsResponse> {
 		return await AxiosClient.post<GetUsageAnalyticsResponse>(`${this.baseUrl}/analytics/revenue`, payload);
+	}
+
+	/**
+	 * Property keys the customer may group or filter usage by, most seen first
+	 */
+	public static async getPropertyKeys(payload: PortalPropertyKeysRequest): Promise<PropertyKeysResponse> {
+		return await AxiosClient.post<PropertyKeysResponse>(`${this.baseUrl}/analytics/properties`, payload);
+	}
+
+	/**
+	 * Values of one property key in the customer's usage, most seen first
+	 */
+	public static async getPropertyValues(payload: PortalPropertyValuesRequest): Promise<PropertyValuesResponse> {
+		return await AxiosClient.post<PropertyValuesResponse>(`${this.baseUrl}/analytics/properties/values`, payload);
 	}
 
 	/**

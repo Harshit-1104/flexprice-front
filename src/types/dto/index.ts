@@ -126,6 +126,9 @@ export type {
 	GetCustomerUsageSummaryRequest,
 	DashboardAnalyticsRequest,
 	DashboardCostAnalyticsRequest,
+	PortalPropertyKeysRequest,
+	PortalPropertyValuesRequest,
+	PropertyValuesResponse,
 } from './Dashboard';
 
 export type {
