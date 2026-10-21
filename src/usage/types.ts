@@ -71,6 +71,8 @@ export interface UsageTrendChartProps {
 	/** The window the series covers, e.g. "Aug 26 – Sep 1", shown under the title. */
 	periodLabel?: string;
 	emptyAction?: EmptyStateAction;
+	/** Formats axis ticks and tooltip values, e.g. as currency when the series plot cost. */
+	valueFormatter?: (value: number) => string;
 }
 
 // ── UsageBreakdown ──────────────────────────────────────────────────────────
@@ -90,6 +92,10 @@ export interface UsageBreakdownRow {
 export interface UsageBreakdownProps {
 	rows: UsageBreakdownRow[];
 	label?: string;
+	/** Header of the name column; defaults to "Feature". */
+	nameLabel?: string;
+	/** Hide the usage column when rows sum usage across features. */
+	showUsage?: boolean;
 	isLoading?: boolean;
 	className?: string;
 	emptyAction?: EmptyStateAction;

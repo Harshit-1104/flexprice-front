@@ -103,6 +103,8 @@ interface CustomerUsageChartProps {
 	 * shorter value so a sparse series does not leave a wall of empty space.
 	 */
 	height?: number;
+	/** Formats axis ticks and tooltip values; defaults to compact numbers. */
+	valueFormatter?: (value: number) => string;
 }
 
 export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({
@@ -112,6 +114,7 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({
 	className,
 	primaryColor,
 	height = 400,
+	valueFormatter,
 }) => {
 	const t = useCustomerUsageChartT();
 	// Process the data for chart display
@@ -333,7 +336,7 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({
 									width={48}
 									tickCount={5}
 									dx={-5}
-									tickFormatter={(value) => formatCompactNumber(value)}
+									tickFormatter={(value) => (valueFormatter ? valueFormatter(value) : formatCompactNumber(value))}
 								/>
 								<Tooltip
 									cursor={{ stroke: primaryColor ? `${primaryColor}66` : 'rgba(99,102,241,0.4)', strokeWidth: 1, strokeDasharray: '3 3' }}
@@ -400,26 +403,34 @@ export const CustomerUsageChart: React.FC<CustomerUsageChartProps> = ({
 														overflowY: 'auto',
 														overflowX: 'hidden',
 													}}>
-													{payload.map((entry, index: number) => (
-														<div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-															<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-																<span
-																	style={{
-																		width: '8px',
-																		height: '8px',
-																		borderRadius: '50%',
-																		backgroundColor: entry.color,
-																		display: 'inline-block',
-																	}}></span>
-																<span style={{ color: 'rgb(var(--fp-content-tertiary))', fontSize: '11px' }}>
-																	{(typeof entry.dataKey === 'string' && seriesConfig[entry.dataKey]?.label) || entry.name || entry.dataKey}
+													{[...payload]
+														.sort((a, b) => Number(b.value) - Number(a.value))
+														.map((entry, index: number) => (
+															<div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+																<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+																	<span
+																		style={{
+																			width: '8px',
+																			height: '8px',
+																			borderRadius: '50%',
+																			backgroundColor: entry.color,
+																			display: 'inline-block',
+																		}}></span>
+																	<span style={{ color: 'rgb(var(--fp-content-tertiary))', fontSize: '11px' }}>
+																		{(typeof entry.dataKey === 'string' && seriesConfig[entry.dataKey]?.label) ||
+																			entry.name ||
+																			entry.dataKey}
+																	</span>
+																</div>
+																<span style={{ fontWeight: 500, color: 'rgb(var(--fp-content))' }}>
+																	{typeof entry.value === 'number'
+																		? valueFormatter
+																			? valueFormatter(entry.value)
+																			: entry.value.toLocaleString()
+																		: entry.value}
 																</span>
 															</div>
-															<span style={{ fontWeight: 500, color: 'rgb(var(--fp-content))' }}>
-																{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
-															</span>
-														</div>
-													))}
+														))}
 												</div>
 											</div>
 										);

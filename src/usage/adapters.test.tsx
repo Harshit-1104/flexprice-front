@@ -4,7 +4,14 @@ import { ENTITY_STATUS } from '@/models/base';
 import type { CustomerUsage, UsageAnalyticItem } from '@/models';
 import type { Group } from '@/models/Group';
 import { GROUP_ENTITY_TYPE } from '@/models/Group';
-import { adaptUsageQuotaItems, adaptMetricCards, adaptUsageTrendSeries, adaptUsageBreakdownRows } from './adapters';
+import {
+	adaptUsageQuotaItems,
+	adaptMetricCards,
+	adaptUsageTrendSeries,
+	adaptUsageBreakdownRows,
+	adaptGroupedTrendSeries,
+	adaptGroupedBreakdownRows,
+} from './adapters';
 
 function makeFeature(overrides: Partial<Feature> = {}): Feature {
 	return {
@@ -251,5 +258,63 @@ describe('adaptUsageBreakdownRows', () => {
 			}),
 		]);
 		expect(result[0].unit).toBe('GB');
+	});
+});
+
+describe('grouped by a property', () => {
+	const day1 = '2026-01-01T00:00:00Z';
+	const day2 = '2026-01-02T00:00:00Z';
+	const item = (featureId: string, region: string | undefined, cost: number, usage: number) =>
+		makeUsageAnalyticItem({
+			feature_id: featureId,
+			properties: region ? { region } : {},
+			total_usage: usage,
+			total_cost: cost,
+			currency: 'usd',
+			points: [
+				{ timestamp: day1, usage, cost, event_count: 1 },
+				{ timestamp: day2, usage: 1, cost: 1, event_count: 1 },
+			],
+		});
+	const labels = { none: '(none)', other: 'Other' };
+	const items = [
+		item('feat_cpu', 'us', 10, 4),
+		item('feat_mem', 'us', 5, 2),
+		item('feat_cpu', 'eu', 8, 3),
+		item('feat_cpu', undefined, 1, 1),
+	];
+
+	it('keeps items of one feature apart when they differ only in properties', () => {
+		const ids = adaptUsageTrendSeries(items.slice(0, 3), { feature_filter_mode: 'all' }).map((s) => s.id);
+		expect(new Set(ids).size).toBe(3);
+	});
+
+	it('sums cost across features per timestamp, ranked by total cost', () => {
+		const series = adaptGroupedTrendSeries(items, 'region', 'cost', 8, labels);
+		expect(series.map((s) => s.name)).toEqual(['us', 'eu', '(none)']);
+		expect(series[0].points).toEqual([
+			{ timestamp: day1, usage: 15 },
+			{ timestamp: day2, usage: 2 },
+		]);
+	});
+
+	it('plots usage when asked', () => {
+		const series = adaptGroupedTrendSeries(items, 'region', 'usage', 8, labels);
+		expect(series[0].points[0]).toEqual({ timestamp: day1, usage: 6 });
+	});
+
+	it('folds groups past the cap into Other', () => {
+		const series = adaptGroupedTrendSeries(items, 'region', 'cost', 1, labels);
+		expect(series.map((s) => s.name)).toEqual(['us', 'Other']);
+		expect(series[1].points[0]).toEqual({ timestamp: day1, usage: 9 });
+	});
+
+	it('builds one breakdown row per group with usage and cost summed', () => {
+		const rows = adaptGroupedBreakdownRows(items, 'region', '(none)');
+		expect(rows.map((r) => [r.name, r.totalUsage, r.totalCost])).toEqual([
+			['us', 6, 15],
+			['eu', 3, 8],
+			['(none)', 1, 1],
+		]);
 	});
 });

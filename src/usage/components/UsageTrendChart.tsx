@@ -31,7 +31,15 @@ import type { UsageTrendChartProps } from '../types';
  * above "No data to display"), which reads as a broken chart. This one keeps the heading and
  * the period it covers, then a compact empty state saying what is missing, why, and where to go.
  */
-const UsageTrendChart = ({ series: rawSeries, label, isLoading = false, className, periodLabel, emptyAction }: UsageTrendChartProps) => {
+const UsageTrendChart = ({
+	series: rawSeries,
+	label,
+	isLoading = false,
+	className,
+	periodLabel,
+	emptyAction,
+	valueFormatter,
+}: UsageTrendChartProps) => {
 	const series = useMemo(() => normalizeUsageTrendSeries(rawSeries), [rawSeries]);
 	const t = useUsageT();
 	// The caption's words come from i18next but its date came from the browser
@@ -139,6 +147,7 @@ const UsageTrendChart = ({ series: rawSeries, label, isLoading = false, classNam
 			description={sparseCaption || periodLabel}
 			className={cn('flexprice-ui', className)}
 			height={260}
+			valueFormatter={valueFormatter}
 		/>
 	);
 };

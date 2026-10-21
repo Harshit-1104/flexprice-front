@@ -28,4 +28,13 @@ export type { UsageBreakdownRow, UsageBreakdownProps } from './types';
 export { normalizeUsageQuotaItems, normalizeMetricCardItems, normalizeUsageTrendSeries, normalizeUsageBreakdownRows } from './schema';
 
 // Pure DTO → presentational adapters (optional helpers for consumers mapping Flexprice API data)
-export { adaptUsageQuotaItems, adaptMetricCards, adaptUsageTrendSeries, adaptUsageBreakdownRows } from './adapters';
+export {
+	adaptUsageQuotaItems,
+	adaptMetricCards,
+	adaptUsageTrendSeries,
+	adaptUsageBreakdownRows,
+	filterItemsByFeatureConfig,
+	adaptGroupedTrendSeries,
+	adaptGroupedBreakdownRows,
+} from './adapters';
+export type { GroupedMetric, GroupedLabels } from './adapters';
