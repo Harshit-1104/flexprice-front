@@ -170,7 +170,6 @@
 	},
 	"metrics": {
 		"revenue": "Revenue",
-		"cost": "Cost",
 		"margin": "Margin",
 		"marginPercent": "Margin %",
 		"cpm": "CPM"
@@ -325,5 +324,27 @@
 	"section": {
 		"emptyTitle": "Nothing to show here",
 		"emptyDescription": "This section has no content configured yet."
+	},
+	"usageFilters": {
+		"groupBy": "Group by",
+		"groupByKey": "Group by: {{key}}",
+		"noGrouping": "None",
+		"filter": "Filter",
+		"filterCount": "Filter ({{count}})",
+		"allFeatures": "All features",
+		"featureCount_one": "{{count}} feature",
+		"featureCount_other": "{{count}} features",
+		"searchFeatures": "Search features",
+		"searchProperties": "Search properties",
+		"searchValues": "Search values",
+		"noResults": "No results",
+		"noValues": "No values found",
+		"loading": "Loading…",
+		"apply": "Apply",
+		"back": "Back",
+		"clearAll": "Clear all",
+		"removeFilter": "Remove {{key}} filter",
+		"noValue": "(none)",
+		"other": "Other"
 	}
 }

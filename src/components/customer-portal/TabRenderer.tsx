@@ -46,6 +46,8 @@ interface TabRendererProps {
 	 * so they hit the same React Query cache entry — zero duplicate API calls.
 	 */
 	analyticsParams: DashboardAnalyticsRequest;
+	/** Property the usage widgets are grouped by; grouped views show cost. */
+	usageGroupKey?: string;
 }
 
 /**
@@ -61,7 +63,7 @@ const formatPeriod = (start?: string, end?: string): string | undefined => {
 	return `${short(start)} – ${short(end)}`;
 };
 
-const TabRenderer = ({ tab, subscriptions = [], usageData, analyticsParams }: TabRendererProps) => {
+const TabRenderer = ({ tab, subscriptions = [], usageData, analyticsParams, usageGroupKey }: TabRendererProps) => {
 	const period = formatPeriod(analyticsParams?.start_time, analyticsParams?.end_time);
 
 	return (
@@ -74,9 +76,12 @@ const TabRenderer = ({ tab, subscriptions = [], usageData, analyticsParams }: Ta
 					analyticsParams={analyticsParams}
 					label={tab.label}
 					periodLabel={period}
+					groupKey={usageGroupKey}
 				/>
 			)}
-			{tab.type === 'usage_breakdown' && <UsageBreakdownContainer analyticsParams={analyticsParams} label={tab.label} />}
+			{tab.type === 'usage_breakdown' && (
+				<UsageBreakdownContainer analyticsParams={analyticsParams} label={tab.label} groupKey={usageGroupKey} />
+			)}
 			{tab.type === 'invoices' && <InvoicesWidget />}
 			{tab.type === 'account_summary' && <AccountSummaryWidget label={tab.label} />}
 			{/* Top up leads, in the header beside the wallet's name; the menu drops to the

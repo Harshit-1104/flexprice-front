@@ -19,8 +19,13 @@ import { cn } from '@/lib/utils';
  * so nothing here draws an outer border of its own. The header carries a light
  * tint to separate the column labels from the rows without a second rule.
  */
-export const PortalTable = ({ className, children, ...props }: HTMLAttributes<HTMLTableElement>) => (
-	<div className='w-full overflow-x-auto'>
+interface PortalTableProps extends HTMLAttributes<HTMLTableElement> {
+	/** Classes for the scroll container, e.g. a max height so long tables scroll inside their card. */
+	containerClassName?: string;
+}
+
+export const PortalTable = ({ className, containerClassName, children, ...props }: PortalTableProps) => (
+	<div className={cn('w-full overflow-x-auto', containerClassName)}>
 		<table className={cn('w-full border-collapse text-sm', className)} {...props}>
 			{children}
 		</table>

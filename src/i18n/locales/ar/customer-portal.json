@@ -170,7 +170,6 @@
 	},
 	"metrics": {
 		"revenue": "الإيرادات",
-		"cost": "التكلفة",
 		"margin": "الهامش",
 		"marginPercent": "الهامش %",
 		"cpm": "CPM"
@@ -325,5 +324,31 @@
 	"section": {
 		"emptyTitle": "لا يوجد شيء لعرضه هنا",
 		"emptyDescription": "لم يتم إعداد أي محتوى لهذا القسم بعد."
+	},
+	"usageFilters": {
+		"groupBy": "تجميع حسب",
+		"groupByKey": "تجميع حسب: {{key}}",
+		"noGrouping": "بدون",
+		"filter": "تصفية",
+		"filterCount": "تصفية ({{count}})",
+		"allFeatures": "جميع الميزات",
+		"featureCount_zero": "{{count}} ميزة",
+		"featureCount_one": "ميزة واحدة",
+		"featureCount_two": "ميزتان",
+		"featureCount_few": "{{count}} ميزات",
+		"featureCount_many": "{{count}} ميزة",
+		"featureCount_other": "{{count}} ميزة",
+		"searchFeatures": "ابحث في الميزات",
+		"searchProperties": "ابحث في الخصائص",
+		"searchValues": "ابحث في القيم",
+		"noResults": "لا توجد نتائج",
+		"noValues": "لم يتم العثور على قيم",
+		"loading": "جارٍ التحميل…",
+		"apply": "تطبيق",
+		"back": "رجوع",
+		"clearAll": "مسح الكل",
+		"removeFilter": "إزالة تصفية {{key}}",
+		"noValue": "(بدون)",
+		"other": "أخرى"
 	}
 }

@@ -9,6 +9,9 @@ import { DashboardAnalyticsRequest } from '@/types';
 import { WindowSize } from '@/models';
 import { DateRangePicker } from '@/components/atoms';
 import TabRenderer, { DEFAULT_USAGE_GRAPH_CONFIG } from './TabRenderer';
+import UsageToolbar, { type UsageFeatureOption } from './UsageToolbar';
+import { portalPropertyKeysQueryKey } from './queryKeys';
+import { filterItemsByFeatureConfig } from '@/usage/adapters';
 import EmptyState from './EmptyState';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -19,6 +22,7 @@ interface SectionContentProps {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const PROPERTY_KEYS_STALE_MS = 5 * 60 * 1000;
 
 // ─── Date Range Calculator ────────────────────────────────────────────────────
 
@@ -186,11 +190,55 @@ const SectionContent = ({ section }: SectionContentProps) => {
 		[selectedPreset, useCustom, customStart, customEnd],
 	);
 
-	// Resolved analytics params — same object passed to every analytics widget
-	const analyticsParams: DashboardAnalyticsRequest = useMemo(
+	const baseParams: DashboardAnalyticsRequest = useMemo(
 		() => ({ window_size: WindowSize.DAY, ...effectiveRange, expand: ['price'] }),
 		[effectiveRange],
 	);
+
+	// ── Feature, group-by and property filters (usage widgets only) ──────────
+	const hasUsageWidgets = enabledTabs.some((t) => t.type === 'usage_graph' || t.type === 'usage_breakdown');
+	const [featureIds, setFeatureIds] = useState<string[]>([]);
+	const [groupKey, setGroupKey] = useState('');
+	const [filters, setFilters] = useState<Record<string, string[]>>({});
+
+	// The unfiltered response lists the features to choose from; it is the widgets' own query when nothing is selected.
+	const { data: baseData } = useQuery({
+		queryKey: ['portal-analytics', baseParams],
+		queryFn: () => CustomerPortalApi.getAnalytics(baseParams),
+		enabled: hasUsageWidgets,
+	});
+	const featureOptions: UsageFeatureOption[] = useMemo(() => {
+		const byId = new Map<string, string>();
+		for (const item of filterItemsByFeatureConfig(baseData?.items ?? [], usageGraphConfig)) {
+			if (!byId.has(item.feature_id)) byId.set(item.feature_id, item.name || item.feature?.name || item.event_name || item.feature_id);
+		}
+		return [...byId].map(([id, name]) => ({ id, name }));
+	}, [baseData, usageGraphConfig]);
+
+	const { data: keysData } = useQuery({
+		queryKey: portalPropertyKeysQueryKey(effectiveRange.start_time, effectiveRange.end_time, featureIds),
+		queryFn: () => CustomerPortalApi.getPropertyKeys({ ...effectiveRange, feature_ids: featureIds.length ? featureIds : undefined }),
+		enabled: hasUsageWidgets,
+		staleTime: PROPERTY_KEYS_STALE_MS,
+	});
+	const propertyKeys = keysData?.keys ?? [];
+	// A grouping or filter on a key the selected features don't have would put everything under "(none)".
+	const effectiveGroupKey = !keysData || propertyKeys.includes(groupKey) ? groupKey : '';
+	const effectiveFilters = useMemo(
+		() => (keysData ? Object.fromEntries(Object.entries(filters).filter(([key]) => keysData.keys.includes(key))) : filters),
+		[filters, keysData],
+	);
+
+	// Resolved analytics params — same object passed to every analytics widget
+	const analyticsParams: DashboardAnalyticsRequest = useMemo(() => {
+		const propertyFilters = Object.fromEntries(Object.entries(effectiveFilters).filter(([, values]) => values.length > 0));
+		return {
+			...baseParams,
+			...(featureIds.length && { feature_ids: featureIds }),
+			...(effectiveGroupKey && { group_by: [`properties.${effectiveGroupKey}`] }),
+			...(Object.keys(propertyFilters).length && { property_filters: propertyFilters }),
+		};
+	}, [baseParams, featureIds, effectiveGroupKey, effectiveFilters]);
 
 	// ── Shared data fetches ──────────────────────────────────────────────────
 	const needsSubscriptions = enabledTabs.some((t) => t.type === 'subscriptions');
@@ -252,9 +300,31 @@ const SectionContent = ({ section }: SectionContentProps) => {
 				/>
 			)}
 
+			{hasUsageWidgets && (featureOptions.length > 1 || propertyKeys.length > 0) && (
+				<UsageToolbar
+					startTime={effectiveRange.start_time}
+					endTime={effectiveRange.end_time}
+					features={featureOptions}
+					featureIds={featureIds}
+					onFeatureIdsChange={setFeatureIds}
+					propertyKeys={propertyKeys}
+					groupKey={effectiveGroupKey}
+					onGroupKeyChange={setGroupKey}
+					filters={effectiveFilters}
+					onFiltersChange={setFilters}
+				/>
+			)}
+
 			{/* All widgets stacked vertically in config order */}
 			{enabledTabs.map((tab) => (
-				<TabRenderer key={tab.id} tab={tab} subscriptions={subscriptions} usageData={usageData} analyticsParams={analyticsParams} />
+				<TabRenderer
+					key={tab.id}
+					tab={tab}
+					subscriptions={subscriptions}
+					usageData={usageData}
+					analyticsParams={analyticsParams}
+					usageGroupKey={effectiveGroupKey || undefined}
+				/>
 			))}
 		</div>
 	);

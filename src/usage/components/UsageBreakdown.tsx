@@ -206,8 +206,8 @@ const UsageBreakdown = ({
 			    a bordered table inside it read as a different component from the portal's
 			    other two tables. */}
 			<div>
-				<Table>
-					<TableHeader>
+				<Table containerClassName='max-h-[28rem] overflow-y-auto'>
+					<TableHeader className='sticky top-0 z-10'>
 						<TableRow>
 							<TableHead className='w-[45%]'>{nameLabel || t('usageWidgets.feature')}</TableHead>
 							{showUsage && <TableHead align='end'>{renderSortableHeader(SORT_TOTAL_USAGE, t('usageWidgets.totalUsage'))}</TableHead>}

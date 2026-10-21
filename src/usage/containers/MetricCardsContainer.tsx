@@ -45,12 +45,19 @@ const MetricCardsContainer = ({ analyticsParams, config, className }: MetricCard
 		// Include feature_ids so this cache entry (and the request) reflects the same dashboard
 		// scope as the custom-metrics query below — otherwise revenue/cost/margin cards would
 		// silently include every feature while custom-metric cards stayed scoped.
-		queryKey: ['portal-cost-analytics', analyticsParams.start_time, analyticsParams.end_time, analyticsParams.feature_ids],
+		queryKey: [
+			'portal-cost-analytics',
+			analyticsParams.start_time,
+			analyticsParams.end_time,
+			analyticsParams.feature_ids,
+			analyticsParams.property_filters,
+		],
 		queryFn: () =>
 			CustomerPortalApi.getCostAnalytics({
 				start_time: analyticsParams.start_time,
 				end_time: analyticsParams.end_time,
 				feature_ids: analyticsParams.feature_ids,
+				property_filters: analyticsParams.property_filters,
 				expand: ['meter', 'price'],
 			}),
 		enabled: merged.show_revenue_metric || merged.show_cost_metrics,
