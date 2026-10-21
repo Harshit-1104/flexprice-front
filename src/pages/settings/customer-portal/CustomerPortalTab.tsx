@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Card, Loader } from '@/components/atoms';
 import { SettingsCardHeader, SettingsToggleRow } from '@/components/molecules';
-import type { PortalConfig } from '@/types/dto/PortalConfig';
+import type { PortalConfig, UsagePropertiesConfig } from '@/types/dto/PortalConfig';
 import SettingsFormActions from '../SettingsFormActions';
 import { applyPortalVisibility, getPortalVisibility, type PortalVisibility } from './portalVisibility';
 import { useCustomerPortalConfig } from './useCustomerPortalConfig';
 import { useCurrentUserPermissions } from '@/hooks/useCurrentUserPermissions';
+import { MeterApi } from '@/api/MeterApi';
+import PropertyKeysInput from './PropertyKeysInput';
+
+const KEY_SUGGESTIONS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const CustomerPortalTab = () => {
 	const { t } = useTranslation(['settings', 'common']);
@@ -26,6 +31,32 @@ const CustomerPortalTab = () => {
 
 	const handleToggle = (key: keyof PortalVisibility, checked: boolean) => {
 		setDraftConfig((prev) => applyPortalVisibility(prev, { ...getPortalVisibility(prev), [key]: checked }));
+	};
+
+	const usageProperties = draftConfig.analytics_config?.usage_properties ?? {};
+
+	const keySuggestions = useQuery({
+		queryKey: ['settings', 'usage-property-keys'],
+		queryFn: () => {
+			const end = new Date();
+			return MeterApi.getPropertyKeys({
+				start_time: new Date(end.getTime() - KEY_SUGGESTIONS_WINDOW_MS).toISOString(),
+				end_time: end.toISOString(),
+			});
+		},
+		enabled: usageProperties.enabled === true,
+		staleTime: 5 * 60 * 1000,
+	});
+	const suggestions = keySuggestions.data?.keys ?? [];
+
+	const updateUsageProperties = (patch: UsagePropertiesConfig) => {
+		setDraftConfig((prev) => ({
+			...prev,
+			analytics_config: {
+				...prev.analytics_config,
+				usage_properties: { ...prev.analytics_config?.usage_properties, ...patch },
+			},
+		}));
 	};
 
 	const handleReset = () => {
@@ -80,6 +111,40 @@ const CustomerPortalTab = () => {
 							disabled={updateConfig.isPending}
 							onCheckedChange={(checked) => handleToggle('showUsage', checked)}
 						/>
+						{visibility.showUsage && (
+							<div>
+								<SettingsToggleRow
+									label={t('customerPortal.portal.showUsageProperties')}
+									description={t('customerPortal.portal.showUsagePropertiesDescription')}
+									infoAriaLabel={t('info.ariaLabel', { field: t('customerPortal.portal.showUsageProperties') })}
+									checked={usageProperties.enabled ?? false}
+									disabled={updateConfig.isPending}
+									onCheckedChange={(checked) => updateUsageProperties({ enabled: checked })}
+								/>
+								{usageProperties.enabled && (
+									<div className='grid gap-6 pb-4 sm:grid-cols-2'>
+										<PropertyKeysInput
+											label={t('customerPortal.portal.allowedKeys')}
+											description={t('customerPortal.portal.allowedKeysDescription')}
+											value={usageProperties.allowed_keys ?? []}
+											onChange={(keys) => updateUsageProperties({ allowed_keys: keys })}
+											suggestions={suggestions}
+											isLoading={keySuggestions.isLoading}
+											disabled={updateConfig.isPending}
+										/>
+										<PropertyKeysInput
+											label={t('customerPortal.portal.hiddenKeys')}
+											description={t('customerPortal.portal.hiddenKeysDescription')}
+											value={usageProperties.hidden_keys ?? []}
+											onChange={(keys) => updateUsageProperties({ hidden_keys: keys })}
+											suggestions={suggestions}
+											isLoading={keySuggestions.isLoading}
+											disabled={updateConfig.isPending}
+										/>
+									</div>
+								)}
+							</div>
+						)}
 						<SettingsToggleRow
 							label={t('customerPortal.portal.showSubscriptions')}
 							description={t('customerPortal.portal.showSubscriptionsDescription')}

@@ -1,6 +1,14 @@
 import { AxiosClient } from '@/core/axios/verbs';
 import { Pagination } from '@/models';
-import { CreateMeterRequest, UpdateMeterRequest, MeterResponse, GetAllMetersResponse, ListMetersResponse } from '@/types/dto';
+import {
+	CreateMeterRequest,
+	UpdateMeterRequest,
+	MeterResponse,
+	GetAllMetersResponse,
+	ListMetersResponse,
+	GetPropertyKeysRequest,
+	PropertyKeysResponse,
+} from '@/types/dto';
 
 export class MeterApi {
 	private static baseUrl = '/meters';
@@ -35,5 +43,10 @@ export class MeterApi {
 
 	public static async listMeters({ limit, offset }: Pagination) {
 		return await AxiosClient.get<ListMetersResponse>(`${this.baseUrl}?limit=${limit}&offset=${offset}`);
+	}
+
+	/** Event property keys seen in usage, most seen first; quantity keys excluded. */
+	public static async getPropertyKeys(payload: GetPropertyKeysRequest) {
+		return await AxiosClient.post<PropertyKeysResponse, GetPropertyKeysRequest>('/meter-usage/properties', payload);
 	}
 }

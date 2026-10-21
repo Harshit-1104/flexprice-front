@@ -331,7 +331,20 @@
 			"saveSuccess": "تم حفظ إعدادات البوابة",
 			"saveError": "فشل حفظ إعدادات البوابة",
 			"showPaymentMethods": "إظهار طرق الدفع",
-			"showPaymentMethodsDescription": "السماح للعملاء بعرض البطاقات المحفوظة وإضافة بطاقة جديدة من البوابة"
+			"showPaymentMethodsDescription": "السماح للعملاء بعرض البطاقات المحفوظة وإضافة بطاقة جديدة من البوابة",
+			"showUsageProperties": "تجميع الاستخدام وتصفيته حسب الخصائص",
+			"showUsagePropertiesDescription": "يمكن للعملاء تجميع الاستخدام وتصفيته حسب خصائص الأحداث، مثل المنطقة أو النموذج",
+			"allowedKeys": "إظهار هذه الخصائص فقط",
+			"allowedKeysDescription": "اتركه فارغًا لإظهار جميع الخصائص.",
+			"hiddenKeys": "إخفاء هذه الخصائص دائمًا",
+			"hiddenKeysDescription": "الخصائص التي تحمل قيمًا من نوع الكمية مخفية افتراضيًا",
+			"addKey": "إضافة خاصية",
+			"searchKeys": "ابحث أو اكتب خاصية",
+			"addTypedKey": "إضافة \"{{key}}\"",
+			"removeKey": "إزالة {{key}}",
+			"loadingKeys": "جارٍ تحميل الخصائص…",
+			"noKeysFound": "لم يتم العثور على خصائص في آخر 7 أيام",
+			"invalidKeys": "يمكن أن تحتوي الخصائص على أحرف وأرقام و _ و . فقط"
 		}
 	},
 	"customerOnboarding": {

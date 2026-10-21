@@ -47,3 +47,19 @@ export interface ListMetersResponse {
 	items: MeterResponse[];
 	pagination: Pagination;
 }
+
+// ============================================
+// Property Lookup Types
+// ============================================
+
+/** Without external_customer_id, keys are sampled across the whole environment. */
+export interface GetPropertyKeysRequest {
+	external_customer_id?: string;
+	feature_ids?: string[];
+	start_time: string;
+	end_time: string;
+}
+
+export interface PropertyKeysResponse {
+	keys: string[];
+}

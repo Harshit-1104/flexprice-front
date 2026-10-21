@@ -105,6 +105,19 @@ export interface SectionConfig {
 	tabs: TabConfig[]; // widgets inside this section, sorted by order
 }
 
+// ─── Analytics Config ─────────────────────────────────────────────────────────
+
+/** Event property keys portal users may group and filter usage by. Off unless enabled; allowed_keys empty = all keys. */
+export interface UsagePropertiesConfig {
+	enabled?: boolean;
+	allowed_keys?: string[];
+	hidden_keys?: string[];
+}
+
+export interface PortalAnalyticsConfig {
+	usage_properties?: UsagePropertiesConfig;
+}
+
 // ─── Root Config ──────────────────────────────────────────────────────────────
 
 export interface PortalConfig {
@@ -112,6 +125,7 @@ export interface PortalConfig {
 	/** Optional — when absent the portal renders with its default light-mode appearance */
 	theme?: PortalTheme;
 	sections: SectionConfig[];
+	analytics_config?: PortalAnalyticsConfig;
 }
 
 // ─── Default Config ───────────────────────────────────────────────────────────
@@ -290,5 +304,7 @@ export function deepMergePortalConfig(defaults: PortalConfig, tenant: Partial<Po
 		// return. Section removal is expressed by `enabled: false`, not by deletion,
 		// so that is the narrower reading of intent.
 		sections: withPortalComposition(mergeSections(defaults.sections, tenant.sections), defaults.sections),
+		// Kept as stored so saving the settings form doesn't drop it.
+		analytics_config: tenant.analytics_config,
 	};
 }

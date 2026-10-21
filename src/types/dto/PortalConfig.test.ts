@@ -73,6 +73,12 @@ describe('deepMergePortalConfig', () => {
 		const merged = deepMergePortalConfig(DEFAULT_PORTAL_CONFIG, {});
 		expect(merged.sections).toEqual(DEFAULT_PORTAL_CONFIG.sections);
 	});
+
+	it('keeps the stored analytics config', () => {
+		const analytics_config = { usage_properties: { allowed_keys: ['region'], hidden_keys: ['instance_id'] } };
+		const merged = deepMergePortalConfig(DEFAULT_PORTAL_CONFIG, { ...tenantConfig, analytics_config });
+		expect(merged.analytics_config).toEqual(analytics_config);
+	});
 });
 
 describe('Overview composition', () => {

@@ -176,6 +176,8 @@ export type {
 	MeterResponse,
 	GetAllMetersResponse,
 	ListMetersResponse,
+	GetPropertyKeysRequest,
+	PropertyKeysResponse,
 } from './Meter';
 
 export type { GetAllPaymentsPayload, GetAllPaymentsResponse, RecordPaymentPayload } from './Payment';

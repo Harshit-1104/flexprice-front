@@ -325,7 +325,20 @@
 			"saveSuccess": "Portal settings saved",
 			"saveError": "Failed to save portal settings",
 			"showPaymentMethods": "Show payment methods",
-			"showPaymentMethodsDescription": "Let customers view saved cards and add a new one from the portal"
+			"showPaymentMethodsDescription": "Let customers view saved cards and add a new one from the portal",
+			"showUsageProperties": "Group and filter usage by properties",
+			"showUsagePropertiesDescription": "Customers can group and filter usage by event properties, such as region or model",
+			"allowedKeys": "Only show these properties",
+			"allowedKeysDescription": "Leave empty to show all properties.",
+			"hiddenKeys": "Always hide these properties",
+			"hiddenKeysDescription": "Properties that have quantity type values are hidden by default",
+			"addKey": "Add property",
+			"searchKeys": "Search or type a property",
+			"addTypedKey": "Add \"{{key}}\"",
+			"removeKey": "Remove {{key}}",
+			"loadingKeys": "Loading properties…",
+			"noKeysFound": "No properties found in the last 7 days",
+			"invalidKeys": "Properties can contain only letters, numbers, _ and ."
 		}
 	},
 	"customerOnboarding": {
