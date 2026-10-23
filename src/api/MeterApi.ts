@@ -45,7 +45,7 @@ export class MeterApi {
 		return await AxiosClient.get<ListMetersResponse>(`${this.baseUrl}?limit=${limit}&offset=${offset}`);
 	}
 
-	/** Event property keys seen in usage, most seen first; quantity keys excluded. */
+	/** Event property keys seen in usage, most seen first; aggregation keys excluded. */
 	public static async getPropertyKeys(payload: GetPropertyKeysRequest) {
 		return await AxiosClient.post<PropertyKeysResponse, GetPropertyKeysRequest>('/meter-usage/properties', payload);
 	}
