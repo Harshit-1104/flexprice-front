@@ -5,6 +5,18 @@ import { PAYMENT_STATUS } from '@/constants/payment';
 import { TaxApplied } from './Tax';
 import { PRICE_TYPE } from './Price';
 
+/**
+ * An invoice's dates as calendar days ("YYYY-MM-DD") resolved by the backend in the timezone the
+ * invoice was billed in. `period_end` is the last day the period covers. Show these as-is.
+ */
+export interface InvoiceDisplayDates {
+	readonly timezone: string;
+	readonly issue_date?: string;
+	readonly due_date?: string;
+	readonly period_start?: string;
+	readonly period_end?: string;
+}
+
 export interface Invoice extends BaseModel {
 	readonly customer_id: string;
 	readonly subscription_id: string;
@@ -34,6 +46,8 @@ export interface Invoice extends BaseModel {
 	readonly voided_at?: string;
 	readonly finalized_at: string;
 	readonly issue_date?: string;
+	/** Dates as calendar days in the timezone the invoice was billed in; returned by the get-invoice API */
+	readonly display_dates?: InvoiceDisplayDates;
 	readonly billing_reason: INVOICE_BILLING_REASON;
 	readonly line_items: LineItem[];
 	readonly total_tax: number;
@@ -89,6 +103,8 @@ export interface LineItem extends BaseModel {
 	readonly currency: string;
 	readonly period_start?: string;
 	readonly period_end?: string;
+	/** Service period as calendar days in the invoice's billing timezone; returned by the get-invoice API */
+	readonly display_dates?: InvoiceDisplayDates;
 	readonly metadata: Metadata;
 	readonly environment_id: string;
 	readonly commitment_info?: {

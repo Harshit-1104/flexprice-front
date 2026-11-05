@@ -12,7 +12,7 @@ import useUser from '@/hooks/useUser';
 import { useBreadcrumbsStore } from '@/store/useBreadcrumbsStore';
 import InvoiceApi from '@/api/InvoiceApi';
 import CustomerApi from '@/api/CustomerApi';
-import formatDate from '@/utils/common/format_date';
+import formatDate, { formatCalendarDay } from '@/utils/common/format_date';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { FC, useEffect, useRef, useState } from 'react';
@@ -194,8 +194,18 @@ const CustomerInvoiceDetail: FC<Props> = ({ invoice_id, breadcrumb_index }) => {
 						</div>
 						<div className='w-full grid grid-cols-4 gap-4 text-content-zinc-muted text-sm'>
 							<p>{data?.invoice_number}</p>
-							<p>{formatDate(data?.issue_date ?? data?.created_at ?? '')}</p>
-							<p>{data?.due_date ? formatDate(data?.due_date ?? '') : na}</p>
+							<p>
+								{data?.display_dates?.issue_date
+									? formatCalendarDay(data.display_dates.issue_date)
+									: formatDate(data?.issue_date ?? data?.created_at ?? '')}
+							</p>
+							<p>
+								{data?.display_dates?.due_date
+									? formatCalendarDay(data.display_dates.due_date)
+									: data?.due_date
+										? formatDate(data.due_date)
+										: na}
+							</p>
 							<p>{getPaymentStatusChip(data?.payment_status ?? '', t)}</p>
 						</div>
 					</div>

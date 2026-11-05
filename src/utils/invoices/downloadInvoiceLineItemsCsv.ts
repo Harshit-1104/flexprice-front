@@ -1,6 +1,6 @@
 import type { Invoice, LineItem } from '@/models/Invoice';
 import { INVOICE_TYPE } from '@/models/Invoice';
-import { formatBillingPeriod } from '@/utils/common/format_date';
+import { formatLineItemPeriod } from '@/utils/common/format_date';
 import { getPriceTypeLabel } from '@/utils/common/helper_functions';
 
 function escapeCsvCell(value: string): string {
@@ -11,7 +11,7 @@ function escapeCsvCell(value: string): string {
 function lineItemToRow(item: LineItem, invoiceType: INVOICE_TYPE): string[] {
 	const displayName = item.display_name ?? '';
 	const priceType = invoiceType === INVOICE_TYPE.SUBSCRIPTION ? (item.price_type ? getPriceTypeLabel(item.price_type) : '') : '';
-	const billingPeriod = item.period_start && item.period_end ? formatBillingPeriod(item.period_start, item.period_end) : '';
+	const billingPeriod = formatLineItemPeriod(item) ?? '';
 	const quantity = item.quantity != null && item.quantity !== '' ? String(item.quantity) : '';
 	const amount = String(item.amount ?? 0);
 	const currency = item.currency ?? '';

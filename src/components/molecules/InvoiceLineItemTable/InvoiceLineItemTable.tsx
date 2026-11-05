@@ -1,7 +1,7 @@
 import { Button, FormHeader, Toggle } from '@/components/atoms';
 import { LineItem, INVOICE_TYPE, InvoiceTaxSummary } from '@/models/Invoice';
 import { getCurrencySymbol, getPriceTypeLabel } from '@/utils/common/helper_functions';
-import { formatBillingPeriod } from '@/utils/common/format_date';
+import { formatLineItemPeriod } from '@/utils/common/format_date';
 import { FC, useState } from 'react';
 import { RefreshCw, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -120,9 +120,7 @@ const InvoiceLineItemTable: FC<Props> = ({
 											</td>
 										)}
 										{invoiceType === INVOICE_TYPE.SUBSCRIPTION && (
-											<td className='py-4 px-4 text-sm text-content-tertiary text-end'>
-												{item.period_start && item.period_end ? formatBillingPeriod(item.period_start, item.period_end) : na}
-											</td>
+											<td className='py-4 px-4 text-sm text-content-tertiary text-end'>{formatLineItemPeriod(item) ?? na}</td>
 										)}
 										<td className='py-4 px-4 text-end text-sm text-content-tertiary'>{item.quantity ? item.quantity : na}</td>
 										<td className='py-4 px-0 text-end w-36  text-sm text-content-tertiary'>

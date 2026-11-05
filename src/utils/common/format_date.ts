@@ -247,3 +247,35 @@ export function formatBillingPeriodLong(periodStart: string, periodEnd: string):
 	const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
 	return `${start.toLocaleDateString('en-US', options)} – ${end.toLocaleDateString('en-US', { ...options, timeZone: 'UTC' })}`;
 }
+
+/**
+ * Format a calendar day the backend already resolved ("YYYY-MM-DD", e.g. an invoice's `display_dates`)
+ * exactly as given. It is read at UTC midnight and printed in UTC, so the viewer's timezone never shifts the day.
+ */
+export function formatCalendarDay(
+	day: string,
+	locale: string = 'en-US',
+	options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: '2-digit' },
+): string {
+	const date = new Date(`${day}T00:00:00Z`);
+	if (isNaN(date.getTime())) return 'Invalid Date';
+	return date.toLocaleDateString(locale, { ...options, timeZone: 'UTC' });
+}
+
+/**
+ * Format a line item's service period as "29 Oct 2026 - 22 Nov 2026". Uses the backend's `display_dates`
+ * when present; otherwise falls back to deriving the days from the raw timestamps.
+ */
+export function formatLineItemPeriod(item: {
+	period_start?: string;
+	period_end?: string;
+	display_dates?: { period_start?: string; period_end?: string };
+}): string | undefined {
+	const { period_start: startDay, period_end: endDay } = item.display_dates ?? {};
+	if (startDay && endDay) {
+		const day = (d: string) => formatBillingPeriodDate(`${d}T00:00:00Z`, 'utc');
+		return `${day(startDay)} - ${day(endDay)}`;
+	}
+	if (item.period_start && item.period_end) return formatBillingPeriod(item.period_start, item.period_end);
+	return undefined;
+}
